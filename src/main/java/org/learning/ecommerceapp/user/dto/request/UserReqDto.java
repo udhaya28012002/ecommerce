@@ -6,26 +6,27 @@ import org.learning.ecommerceapp.user.entity.Address;
 
 public class UserReqDto {
 
-    @NotBlank
-    @Size(max = 50)
+    @NotBlank(message = "Name is required")
+    @Size(max = 50, message = "Name length should be within 50 characters")
     private String name;
 
-    @NotBlank
-    @Size(min=5, max = 15)
+    @NotBlank(message = "Username is required")
+    @Size(min=5, max = 15, message = "Username should be 5-15 characters only")
     @Pattern(regexp = "^[a-zA-Z0-9_]+$", message = "Username can contain only letters, numbers, underscore")
     private String userName;
 
-    @Email
+
+    @Email(message = "Should be a valid Email ID")
     private String emailId;
 
-    @NotBlank
+    @NotBlank(message = "Password is required")
     @Pattern(
             regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
             message = "Password must be 8+ chars with uppercase, lowercase, number, and special character"
     )
     private String password;
 
-    @NotBlank
+    @NotBlank(message = "Confirm Password is required")
     @Pattern(
             regexp = "^(?=.*[a-z])(?=.*[A-Z])(?=.*\\d)(?=.*[@$!%*?&])[A-Za-z\\d@$!%*?&]{8,}$",
             message = "Password must be 8+ chars with uppercase, lowercase, number, and special character"

@@ -1,7 +1,5 @@
 package org.learning.ecommerceapp.user.service;
 
-import jakarta.persistence.criteria.CriteriaBuilder;
-import org.hibernate.tool.schema.extract.spi.InformationExtractor;
 import org.learning.ecommerceapp.user.dto.request.*;
 import org.learning.ecommerceapp.user.dto.response.InfoDto;
 import org.learning.ecommerceapp.user.dto.response.LoginResDto;
@@ -10,8 +8,6 @@ import org.learning.ecommerceapp.user.entity.Address;
 import org.learning.ecommerceapp.user.entity.Users;
 import org.learning.ecommerceapp.user.exception.*;
 import org.learning.ecommerceapp.user.repository.UserRepo;
-import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseEntity;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
