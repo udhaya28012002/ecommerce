@@ -1,6 +1,7 @@
 package org.learning.ecommerceapp.user.entity;
 
 import jakarta.persistence.*;
+import org.learning.ecommerceapp.user.commons.enums.Role;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
@@ -27,7 +28,8 @@ public class Users {
 
     private String password;
 
-    private String role;
+    @Enumerated(EnumType.STRING)
+    private Role role;
 
     private String status;
 
@@ -35,7 +37,7 @@ public class Users {
 
     public Users(){}
 
-    public Users(String name, String userName, String emailId, String contactNo, List<Address> address, String password, String role, String status, LocalDateTime createdAt) {
+    public Users(String name, String userName, String emailId, String contactNo, List<Address> address, String password, Role role, String status, LocalDateTime createdAt) {
         this.name = name;
         this.userName = userName;
         this.emailId = emailId;
@@ -75,7 +77,7 @@ public class Users {
         return password;
     }
 
-    public String getRole() {
+    public Role getRole() {
         return role;
     }
 
@@ -115,7 +117,7 @@ public class Users {
         this.password = password;
     }
 
-    public void setRole(String role) {
+    public void setRole(Role role) {
         this.role = role;
     }
 

@@ -17,6 +17,8 @@ public class Address {
     private String state;
     private String pincode;
 
+    private boolean isDefault;
+
     public Long getId() {
         return id;
     }
@@ -51,5 +53,13 @@ public class Address {
 
     public void setPincode(String pincode) {
         this.pincode = pincode;
+    }
+
+    public boolean isDefault() {
+        return isDefault;
+    }
+
+    public void setDefault(boolean aDefault) {
+        isDefault = aDefault;
     }
 }

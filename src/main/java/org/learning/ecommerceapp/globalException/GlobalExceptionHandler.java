@@ -1,5 +1,9 @@
-package org.learning.ecommerceapp.user.exception;
+package org.learning.ecommerceapp.globalException;
 
+import org.learning.ecommerceapp.products.exception.CategoryNotFoundException;
+import org.learning.ecommerceapp.products.exception.InvalidInventoryException;
+import org.learning.ecommerceapp.products.exception.NoProductFound;
+import org.learning.ecommerceapp.user.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.MethodArgumentNotValidException;
@@ -39,6 +43,24 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(PasswordMismatchException.class)
     public ResponseEntity<?> handlePasswordMismatch(PasswordMismatchException ex) {
         return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(CategoryNotFoundException.class)
+    public ResponseEntity<?> handleCategory(CategoryNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidInventoryException.class)
+    public ResponseEntity<?> handleInvalidInventory(InvalidInventoryException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(NoProductFound.class)
+    public ResponseEntity<?> handleProductNotFound(NoProductFound ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ex.getMessage());
     }
 

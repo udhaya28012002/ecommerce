@@ -1,5 +1,6 @@
 package org.learning.ecommerceapp.user.service;
 
+import org.learning.ecommerceapp.user.commons.enums.Role;
 import org.learning.ecommerceapp.user.dto.request.*;
 import org.learning.ecommerceapp.user.dto.response.InfoDto;
 import org.learning.ecommerceapp.user.dto.response.LoginResDto;
@@ -39,7 +40,7 @@ public class UserService {
     }
 
     public UserResDto createUser(UserReqDto dto, boolean isAdmin) {
-        String role = isAdmin ? "ADMIN" : "USER";
+        Role role = isAdmin ? Role.ADMIN : Role.CUSTOMER;
 
         if (isPasswordMatch(dto.getPassword(), dto.getConfirmPassword())) {
             throw new PasswordMismatchException("Password and Confirm Password do not match");
@@ -50,7 +51,15 @@ public class UserService {
         }
 
         ArrayList<Address> addresses = new ArrayList<>();
-        addresses.add(dto.getAddress());
+
+        if (dto.getAddress() == null) {
+            throw new IllegalArgumentException("Address cannot be null");
+        }
+
+        Address address = dto.getAddress();
+        address.setDefault(true);
+        addresses.add(address);
+
         Users user = new Users(
                 dto.getName(),
                 dto.getUserName(),
@@ -190,11 +199,14 @@ public class UserService {
             throw new ResourceNotFoundException("User not found");
         }
 
+        user.getAddress().forEach(addr -> addr.setDefault(false));
+
         Address newAddress = new Address();
         newAddress.setCity(addAddressReq.getCity());
         newAddress.setPincode(addAddressReq.getPincode());
         newAddress.setState(addAddressReq.getState());
         newAddress.setStreet(addAddressReq.getStreet());
+        newAddress.setDefault(true);
 
         if (user.getAddress() == null) {
             user.setAddress(new ArrayList<>());
@@ -244,7 +256,7 @@ public class UserService {
             return false;
         }
 
-        return user.getRole().equalsIgnoreCase("ADMIN");
+        return user.getRole() == Role.ADMIN;
     }
 
     private UserResDto populateUserDto(Users user) {
