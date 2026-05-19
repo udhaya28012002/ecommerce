@@ -1,6 +1,7 @@
 package org.learning.ecommerceapp.user.entity;
 
 import jakarta.persistence.*;
+import org.learning.ecommerceapp.order.entity.Orders;
 import org.learning.ecommerceapp.user.commons.enums.Role;
 import org.springframework.stereotype.Repository;
 
@@ -8,10 +9,12 @@ import java.time.LocalDateTime;
 import java.util.List;
 
 @Entity
+@Table(name = "users")
 public class Users {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.SEQUENCE)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    @Column(name = "user_id")
     private long id;
 
     private String name;
@@ -34,6 +37,9 @@ public class Users {
     private String status;
 
     private LocalDateTime createdAt;
+
+    @OneToMany(mappedBy = "users", cascade = CascadeType.ALL)
+    private List<Orders> orders;
 
     public Users(){}
 

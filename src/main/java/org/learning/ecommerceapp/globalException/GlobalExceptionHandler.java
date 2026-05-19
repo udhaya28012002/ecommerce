@@ -1,7 +1,13 @@
 package org.learning.ecommerceapp.globalException;
 
-import org.learning.ecommerceapp.products.exception.CategoryNotFoundException;
-import org.learning.ecommerceapp.products.exception.InvalidInventoryException;
+import org.learning.ecommerceapp.cart.exception.CartEmptyException;
+import org.learning.ecommerceapp.order.exception.OrderItemsNotFoundException;
+import org.learning.ecommerceapp.order.exception.OrderNotFoundException;
+import org.learning.ecommerceapp.order.exception.OrderStatusUpdateException;
+import org.learning.ecommerceapp.order.exception.ProductOutOfStockException;
+import org.learning.ecommerceapp.category.exception.CategoryAlreadyExistsException;
+import org.learning.ecommerceapp.category.exception.CategoryNotFoundException;
+import org.learning.ecommerceapp.inventory.exception.InvalidInventoryException;
 import org.learning.ecommerceapp.products.exception.NoProductFound;
 import org.learning.ecommerceapp.user.exception.*;
 import org.springframework.http.HttpStatus;
@@ -19,6 +25,18 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<?> handleNotFound(ResourceNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(CartEmptyException.class)
+    public ResponseEntity<?> cartEmptyException(CartEmptyException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(IllegalArgumentException.class)
+    public ResponseEntity<?> illegalArgument(IllegalArgumentException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ex.getMessage());
     }
 
@@ -61,6 +79,36 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(NoProductFound.class)
     public ResponseEntity<?> handleProductNotFound(NoProductFound ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(OrderNotFoundException.class)
+    public ResponseEntity<?> handleOrderNotFound(OrderNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(OrderStatusUpdateException.class)
+    public ResponseEntity<?> OrderStatusUpdateException(OrderStatusUpdateException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(OrderItemsNotFoundException.class)
+    public ResponseEntity<?> OrderItemsNotFound(OrderItemsNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(ProductOutOfStockException.class)
+    public ResponseEntity<?> handleProductOutOfStock(ProductOutOfStockException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(CategoryAlreadyExistsException.class)
+    public ResponseEntity<?> handleCategoryAlreadyExists(CategoryAlreadyExistsException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
                 .body(ex.getMessage());
     }
 

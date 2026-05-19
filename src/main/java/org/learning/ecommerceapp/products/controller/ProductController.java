@@ -61,24 +61,19 @@ public class ProductController {
         return ResponseEntity.ok(productService.updateProductCategory(productId, categoryId));
     }
 
-    @PatchMapping("/updateInventory/{productId}")
-    public ResponseEntity<?> updateInventoryQuantity(@PathVariable long productId, @RequestParam int quantity, @RequestParam boolean positive){
-        return ResponseEntity.ok(productService.updateInventoryQuantity(productId, quantity, positive));
-    }
-
     @GetMapping("/filterProducts")
     public ResponseEntity<?> filterProducts(@RequestParam  int minPrice, @RequestParam int maxPrice){
         return ResponseEntity.ok(productService.filterByPrice(minPrice, maxPrice));
     }
 
     @GetMapping("/sortByPrice/{asc}")
-    public ResponseEntity<?> sortByPrice(@PathVariable boolean flag){
-        return ResponseEntity.ok(productService.sortByPriceAscOrDesc(flag));
+    public ResponseEntity<?> sortByPrice(@PathVariable boolean asc){
+        return ResponseEntity.ok(productService.sortByPriceAscOrDesc(asc));
     }
 
     @GetMapping("/sortByName/{asc}")
-    public ResponseEntity<?> sortByName(@PathVariable boolean flag){
-        return ResponseEntity.ok(productService.sortByNameAscOrDesc(flag));
+    public ResponseEntity<?> sortByName(@PathVariable boolean asc){
+        return ResponseEntity.ok(productService.sortByNameAscOrDesc(asc));
     }
 
     @GetMapping("/getInStockProducts")

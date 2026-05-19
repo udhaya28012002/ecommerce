@@ -1,4 +1,4 @@
-package org.learning.ecommerceapp.products.entity;
+package org.learning.ecommerceapp.category.entity;
 
 import jakarta.persistence.*;
 
@@ -6,17 +6,13 @@ import jakarta.persistence.*;
 public class ProductCategory {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long categoryId;
 
     private String categoryName;
 
     public long getCategoryId() {
         return categoryId;
-    }
-
-    public void setCategoryId(long categoryId) {
-        this.categoryId = categoryId;
     }
 
     public String getCategoryName() {

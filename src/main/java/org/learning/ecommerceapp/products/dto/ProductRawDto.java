@@ -1,6 +1,6 @@
 package org.learning.ecommerceapp.products.dto;
 
-import org.learning.ecommerceapp.products.entity.ProductCategory;
+import org.learning.ecommerceapp.category.entity.ProductCategory;
 
 public class ProductRawDto {
     private long productId;

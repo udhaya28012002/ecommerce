@@ -1,18 +1,12 @@
 package org.learning.ecommerceapp.order.dto.response;
 
-import jakarta.persistence.CascadeType;
-import jakarta.persistence.OneToMany;
 import jakarta.validation.constraints.NotBlank;
-import jakarta.validation.constraints.NotEmpty;
 import jakarta.validation.constraints.NotNull;
-import jakarta.validation.constraints.PastOrPresent;
-import org.learning.ecommerceapp.order.entity.OrderItems;
 import org.learning.ecommerceapp.order.entity.OrderStatus;
 
-import java.time.LocalDateTime;
 import java.util.List;
 
-public class OrderPlacedResDto {
+public class OrdersResDto {
 
     @NotBlank
     private String orderNumber;

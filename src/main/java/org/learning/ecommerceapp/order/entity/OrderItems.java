@@ -11,7 +11,7 @@ import org.learning.ecommerceapp.products.entity.Products;
 public class OrderItems {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long orderItemId;
 
     @ManyToOne

@@ -77,7 +77,7 @@ public class UserService {
         return new UserResDto(insertedUser.getName(), insertedUser.getUserName(), insertedUser.getEmailId(), insertedUser.getContactNo(), insertedUser.getAddress());
     }
 
-    public List<UserResDto> getUsers(LoginReqDto loginReq) {
+    public List<UserResDto> getAllUsers(LoginReqDto loginReq) {
 
         if (!isAdmin(loginReq)) {
             throw new AccessDeniedException("Admin access required");
@@ -124,6 +124,16 @@ public class UserService {
         throw new IllegalArgumentException("No filter provided");
     }
 
+
+    public Users findByUsername_ForInternal(String username){
+        Users user = userRepo.findByUserName(username);
+
+        if (user == null) {
+            throw new InvalidCredentialsException("Invalid username");
+        }
+
+        return user;
+    }
 
     private Users getUserByUserName(String username, String givenPass) {
 
@@ -177,7 +187,7 @@ public class UserService {
     }
 
     @Transactional
-    public InfoDto changeContactNo(String userName, ChangeOtherDetailsReq changeOtherDetailsReq) {
+    public InfoDto updateContactNo(String userName, ChangeOtherDetailsReq changeOtherDetailsReq) {
 
         Users user = userRepo.findByUserName(userName);
 

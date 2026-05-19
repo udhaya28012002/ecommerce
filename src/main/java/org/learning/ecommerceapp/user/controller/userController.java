@@ -31,7 +31,7 @@ public class userController {
 
     @PostMapping("/getUsers")
     public ResponseEntity<?> getUsers(@Valid @RequestBody LoginReqDto loginReq) {
-        return ResponseEntity.ok(userService.getUsers(loginReq));
+        return ResponseEntity.ok(userService.getAllUsers(loginReq));
     }
 
     @PostMapping("/getUser")
@@ -53,7 +53,7 @@ public class userController {
             @PathVariable String userName,
             @Valid @RequestBody ChangeOtherDetailsReq request) {
 
-        return ResponseEntity.ok(userService.changeContactNo(userName, request));
+        return ResponseEntity.ok(userService.updateContactNo(userName, request));
     }
 
     @PatchMapping("/{userName}/address")

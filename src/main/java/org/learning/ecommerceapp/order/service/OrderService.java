@@ -3,75 +3,279 @@ package org.learning.ecommerceapp.order.service;
 import org.learning.ecommerceapp.order.dto.request.OrderItemRequestDto;
 import org.learning.ecommerceapp.order.dto.request.PlaceOrderRequest;
 import org.learning.ecommerceapp.order.dto.response.OrderItemsResponseDto;
-import org.learning.ecommerceapp.order.dto.response.OrderPlacedResDto;
+import org.learning.ecommerceapp.order.dto.response.OrdersResDto;
 import org.learning.ecommerceapp.order.entity.OrderItems;
 import org.learning.ecommerceapp.order.entity.OrderStatus;
 import org.learning.ecommerceapp.order.entity.Orders;
+import org.learning.ecommerceapp.order.exception.OrderItemsNotFoundException;
+import org.learning.ecommerceapp.order.exception.OrderNotFoundException;
+import org.learning.ecommerceapp.order.exception.OrderStatusUpdateException;
+import org.learning.ecommerceapp.order.exception.ProductOutOfStockException;
 import org.learning.ecommerceapp.order.repository.OrderServiceRepository;
+import org.learning.ecommerceapp.inventory.entity.Inventory;
 import org.learning.ecommerceapp.products.entity.Products;
+import org.learning.ecommerceapp.products.exception.NoProductFound;
 import org.learning.ecommerceapp.products.service.ProductService;
+import org.learning.ecommerceapp.user.commons.enums.Role;
+import org.learning.ecommerceapp.user.exception.AccessDeniedException;
+import org.learning.ecommerceapp.user.repository.UserRepo;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 @Service
 public class OrderService {
 
     private final ProductService productService;
     private final OrderServiceRepository orderServiceRepository;
+    private final UserRepo userRepo;
 
-    public OrderService(ProductService productService, OrderServiceRepository orderServiceRepository) {
+    private static final int DEFAULT_DISCOUNT = 10;
+
+    public OrderService(ProductService productService, OrderServiceRepository orderServiceRepository, UserRepo userRepo) {
         this.productService = productService;
         this.orderServiceRepository = orderServiceRepository;
+        this.userRepo = userRepo;
+    }
+
+    public static final Map<OrderStatus, Set<OrderStatus>> VALID_STATUS_TRANSITIONS =
+            Map.of(
+                    OrderStatus.CREATED,
+                    Set.of(OrderStatus.PENDING, OrderStatus.CANCELLED),
+
+                    OrderStatus.PENDING,
+                    Set.of(OrderStatus.CONFIRMED, OrderStatus.CANCELLED),
+
+                    OrderStatus.CONFIRMED,
+                    Set.of(OrderStatus.PROCESSING, OrderStatus.CANCELLED),
+
+                    OrderStatus.PROCESSING,
+                    Set.of(OrderStatus.SHIPPED, OrderStatus.CANCELLED),
+
+                    OrderStatus.SHIPPED,
+                    Set.of(OrderStatus.OUT_OF_DELIVERY),
+
+                    OrderStatus.OUT_OF_DELIVERY,
+                    Set.of(OrderStatus.DELIVERED),
+
+                    OrderStatus.DELIVERED,
+                    Set.of(),
+
+                    OrderStatus.CANCELLED,
+                    Set.of()
+            );
+
+    @Transactional
+    public OrdersResDto placeOrder(PlaceOrderRequest placeOrderRequest) {
+
+        if(placeOrderRequest.getItems() == null || placeOrderRequest.getItems().isEmpty()){
+            throw new OrderItemsNotFoundException("Order info is missing");
+        }
+
+        System.out.println("This is being invoked");
+
+        LocalDateTime today = LocalDateTime.now();
+        DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
+
+        // CREATE ORDER FIRST
+        Orders order = new Orders();
+        order.setOrderDate(today);
+        order.setOrderNumber("ORD-" + today.format(formatter));
+
+        // CREATE ORDER ITEMS
+        List<OrderItems> orderItemsList = buildOrderItems(placeOrderRequest, order);
+
+        // LINK ITEMS TO ORDER
+        order.setOrderItemsList(orderItemsList);
+
+        // PAYMENT PAGE (IF SUCCESS WE NEED TO PLACE ORDER OTHERWISE REVERT),
+
+        // UPDATING STOCKS BECAUSE THE PAYMENT WAS SUCCESSFUL.
+        updatingStocks(orderItemsList);
+
+        //SETTING ORDER STATUS
+        order.setOrderStatus(OrderStatus.CONFIRMED);
+
+        // SAVE ONLY ORDER (cascade handles items)
+        Orders savedOrder = orderServiceRepository.save(order);
+
+        // BUILD RESPONSE
+        return buildOrderResDto(savedOrder);
+    }
+
+    public OrdersResDto getOrderByOrderNumber(String orderNumber) {
+        Orders orders = orderServiceRepository.findByOrderNumber(orderNumber);
+        if (orders == null) {
+            throw new OrderNotFoundException("No Orders present with this OrderNumber : " + orderNumber);
+        }
+        return buildOrderResDto(orders);
+    }
+
+    public List<OrdersResDto> getUserOrdersByUserName(String userName) {
+        List<Orders> orders = orderServiceRepository.findByUsers_UserName(userName);
+
+        if (orders.isEmpty()) {
+            throw new OrderNotFoundException("No orders found.");
+        }
+
+        return orders.stream()
+                .map(this::buildOrderResDto)
+                .toList();
+    }
+
+    public List<OrdersResDto> getUserOrdersByEmailId(String emailId) {
+        List<Orders> orders = orderServiceRepository.findByUsers_EmailId(emailId);
+
+        if (orders.isEmpty()) {
+            throw new OrderNotFoundException("No orders found.");
+        }
+
+        return orders.stream()
+                .map(this::buildOrderResDto)
+                .toList();
+    }
+
+    public List<OrdersResDto> getUserOrdersByContactNo(String contactNo) {
+        List<Orders> orders = orderServiceRepository.findByUsers_ContactNo(contactNo);
+
+        if (orders.isEmpty()) {
+            throw new OrderNotFoundException("No orders found.");
+        }
+
+        return orders.stream()
+                .map(this::buildOrderResDto)
+                .toList();
+    }
+
+    public List<OrdersResDto> getAllOrders(String userName) {
+        if (!userRepo.findByUserName(userName).getRole().equals(Role.ADMIN)) {
+            throw new AccessDeniedException("Access Denied!");
+        }
+
+        List<Orders> ordersList = orderServiceRepository.findAll();
+
+        if (ordersList.isEmpty()) {
+            throw new OrderNotFoundException("No orders found.");
+        }
+
+        return ordersList.stream()
+                .map(this::buildOrderResDto)
+                .toList();
     }
 
     @Transactional
-    public OrderPlacedResDto placeOrder(PlaceOrderRequest placeOrderRequest) {
+    private void updateOrderStatus(String orderNumber, OrderStatus newOrderStatus) {
+        Orders orders = getOrder(orderNumber);
 
-        long uniqueId = 0;
-        LocalDateTime today = LocalDateTime.now();
+        validateOrderStatusUpdate(orders.getOrderStatus(), newOrderStatus);
 
-        // 1. CREATE ORDER FIRST
-        Orders order = new Orders();
-        order.setOrderDate(today);
-        order.setOrderStatus(OrderStatus.CREATED);
-        order.setOrderNumber("ORD-" + today + "-" + System.currentTimeMillis());
+        orders.setOrderStatus(newOrderStatus);
+        orderServiceRepository.save(orders);
+    }
 
-        List<OrderItems> orderItemsList = new ArrayList<>();
+    public void markOrderAsPending(String orderNumber){
+        updateOrderStatus(orderNumber, OrderStatus.PENDING);
+    }
 
-        // 2. CREATE ORDER ITEMS
-        for (OrderItemRequestDto dto : placeOrderRequest.getItems()) {
+    public void markOrderAsConfirmed(String orderNumber){
+        updateOrderStatus(orderNumber, OrderStatus.CONFIRMED);
+    }
 
-            Products product = productService.getProductByIdInternal(dto.getProductId());
+    public void markOrderAsProcessing(String orderNumber){
+        updateOrderStatus(orderNumber, OrderStatus.PROCESSING);
+    }
 
-            OrderItems item = new OrderItems(
-                    product,
-                    order,
-                    dto.getQuantity(),
-                    product.getPrice(),
-                    10,
-                    dto.getQuantity() * calculateOfferPrice(10, product.getPrice())
-            );
+    public void markAsShipped(String orderNumber){
+        updateOrderStatus(orderNumber, OrderStatus.SHIPPED);
+    }
 
-            uniqueId += product.getProductId();
-            orderItemsList.add(item);
+    public void markOrderAsOutForDelivery(String orderNumber){
+        updateOrderStatus(orderNumber, OrderStatus.OUT_OF_DELIVERY);
+    }
+
+    public void markOrderAsDelivered(String orderNumber){
+        updateOrderStatus(orderNumber, OrderStatus.DELIVERED);
+    }
+
+    @Transactional
+    public void cancelOrder(String orderNumber){
+        Orders orders = getOrder(orderNumber);
+
+        validateOrderStatusUpdate(orders.getOrderStatus(), OrderStatus.CANCELLED);
+
+        //Rever the Inventory Count
+        revertInventory(orders);
+
+        //Updating the Order Status
+        orders.setOrderStatus(OrderStatus.CANCELLED);
+
+        orderServiceRepository.save(orders);
+    }
+
+    private void revertInventory(Orders orders){
+        List<OrderItems> orderItemsList = orders.getOrderItemsList();
+
+        if(orderItemsList.isEmpty()){
+            throw new OrderItemsNotFoundException("No Order Items Found");
         }
 
-        // 3. LINK ITEMS TO ORDER
-        order.setOrderItemsList(orderItemsList);
+        for(OrderItems orderItems : orderItemsList){
+            Products products = orderItems.getProduct();
 
-        // 4. SAVE ONLY ORDER (cascade handles items)
-        Orders savedOrder = orderServiceRepository.save(order);
+            if(products == null){
+                throw new NoProductFound("No Product Found");
+            }
 
-        // 5. BUILD RESPONSE
-        OrderPlacedResDto orderPlacedResDto = new OrderPlacedResDto();
-        orderPlacedResDto.setOrderNumber(savedOrder.getOrderNumber());
-        orderPlacedResDto.setOrderStatus(savedOrder.getOrderStatus());
+            Inventory inventory = products.getInventory();
+            inventory.setProductQuantity(inventory.getProductQuantity() + orderItems.getQuantity());
+        }
+    }
 
-        orderPlacedResDto.setOrderItemsResponse(
+    private Orders getOrder(String orderNumber){
+        Orders orders = orderServiceRepository.findByOrderNumber(orderNumber);
+
+        if (orders == null) {
+            throw new OrderNotFoundException("No Order Found");
+        }
+
+        return orders;
+    }
+
+    private void validateOrderStatusUpdate(OrderStatus prevOrderStatus,
+                                           OrderStatus newOrderStatus) {
+
+        // Prevent same status update
+        if (prevOrderStatus == newOrderStatus) {
+            throw new OrderStatusUpdateException(
+                    "Order is already in " + newOrderStatus + " status"
+            );
+        }
+
+        Set<OrderStatus> allowedStatuses = VALID_STATUS_TRANSITIONS.get(prevOrderStatus);
+
+        if (!allowedStatuses.contains(newOrderStatus)) {
+
+            throw new OrderStatusUpdateException(
+                    "Invalid status transition from "
+                            + prevOrderStatus +
+                            " to " +
+                            newOrderStatus
+            );
+        }
+    }
+
+    private OrdersResDto buildOrderResDto(Orders savedOrder) {
+        OrdersResDto ordersResDto = new OrdersResDto();
+        ordersResDto.setOrderNumber(savedOrder.getOrderNumber());
+        ordersResDto.setOrderStatus(savedOrder.getOrderStatus());
+
+        ordersResDto.setOrderItemsResponse(
                 savedOrder.getOrderItemsList().stream()
                         .map(item -> new OrderItemsResponseDto(
                                 item.getQuantity(),
@@ -82,7 +286,60 @@ public class OrderService {
                         .toList()
         );
 
-        return orderPlacedResDto;
+        return ordersResDto;
+    }
+
+    private void updatingStocks(List<OrderItems> orderItemsList) {
+        for (OrderItems orderItems : orderItemsList) {
+
+            Products products = orderItems.getProduct();
+            int inventoryStock = products.getInventory().getProductQuantity();
+            int orderQuantity = orderItems.getQuantity();
+            Inventory inventory = products.getInventory();
+
+            inventory.setProductQuantity(
+                    calculateInventory(
+                            inventory.getProductQuantity(),
+                            orderQuantity
+                    )
+            );
+        }
+    }
+
+    private List<OrderItems> buildOrderItems(PlaceOrderRequest placeOrderRequest, Orders order) {
+        List<OrderItems> orderItemsList = new ArrayList<>();
+        for (OrderItemRequestDto dto : placeOrderRequest.getItems()) {
+
+            Products product = productService.getProductByIdInternal(dto.getProductId());
+
+            int inventoryStock = product.getInventory().getProductQuantity();
+
+            validateIfProductIsAvailableForOrder(inventoryStock, dto.getQuantity());
+
+            OrderItems item = new OrderItems(
+                    product,
+                    order,
+                    dto.getQuantity(),
+                    product.getPrice(),
+                    DEFAULT_DISCOUNT,
+                    dto.getQuantity() * calculateOfferPrice(10, product.getPrice())
+            );
+
+
+            orderItemsList.add(item);
+        }
+
+        return orderItemsList;
+    }
+
+    private void validateIfProductIsAvailableForOrder(int stockQuantity, int buyQuantity) {
+        if (stockQuantity <= 0 || buyQuantity > stockQuantity) {
+            throw new ProductOutOfStockException("Product is out of stock");
+        }
+    }
+
+    private int calculateInventory(int stockQuantity, int buyQuantity) {
+        return stockQuantity - buyQuantity;
     }
 
     private double calculateOfferPrice(int discount, double sellingPrice) {

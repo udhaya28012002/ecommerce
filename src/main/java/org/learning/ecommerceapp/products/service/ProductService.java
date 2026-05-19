@@ -3,15 +3,15 @@ package org.learning.ecommerceapp.products.service;
 import jakarta.transaction.Transactional;
 import org.learning.ecommerceapp.products.dto.request.ProductReqDto;
 import org.learning.ecommerceapp.products.dto.response.ProductResDto;
-import org.learning.ecommerceapp.products.entity.Inventory;
-import org.learning.ecommerceapp.products.entity.ProductCategory;
+import org.learning.ecommerceapp.inventory.entity.Inventory;
+import org.learning.ecommerceapp.category.entity.ProductCategory;
 import org.learning.ecommerceapp.products.entity.Products;
 import org.learning.ecommerceapp.products.entity.Stock;
-import org.learning.ecommerceapp.products.exception.CategoryNotFoundException;
-import org.learning.ecommerceapp.products.exception.InvalidInventoryException;
+import org.learning.ecommerceapp.category.exception.CategoryNotFoundException;
+import org.learning.ecommerceapp.inventory.exception.InvalidInventoryException;
 import org.learning.ecommerceapp.products.exception.NoProductFound;
-import org.learning.ecommerceapp.products.repository.InventoryRepository;
-import org.learning.ecommerceapp.products.repository.ProductCategoryRepository;
+import org.learning.ecommerceapp.inventory.repository.InventoryRepository;
+import org.learning.ecommerceapp.category.repository.ProductCategoryRepository;
 import org.learning.ecommerceapp.products.repository.ProductRepository;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
@@ -144,34 +144,6 @@ public class ProductService {
         Products product = validateProductPresence(productId);
         ProductCategory category = getProductCategory(categoryId);
         product.setProductCategory(category);
-        return true;
-    }
-
-    @Transactional
-    public boolean updateInventoryQuantity(long productId, int quantity, boolean positive) {
-
-        if (quantity <= 0) {
-            throw new InvalidInventoryException("Quantity must be greater than 0");
-        }
-
-        Inventory inventory = inventoryRepository.findByProduct_ProductId(productId)
-                .orElseThrow(() ->
-                        new NoProductFound("No inventory found for productId: " + productId));
-
-        int currentQty = inventory.getProductQuantity();
-        int newQuantity;
-
-        if (positive) {
-            newQuantity = currentQty + quantity;
-        } else {
-            if (currentQty < quantity) {
-                throw new InvalidInventoryException("Not enough stock to reduce");
-            }
-            newQuantity = currentQty - quantity;
-        }
-
-        inventory.setProductQuantity(newQuantity);
-
         return true;
     }
 

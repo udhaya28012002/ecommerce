@@ -1,12 +1,13 @@
-package org.learning.ecommerceapp.products.entity;
+package org.learning.ecommerceapp.inventory.entity;
 
 import jakarta.persistence.*;
+import org.learning.ecommerceapp.products.entity.Products;
 
 @Entity
 public class Inventory {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long inventoryId;
 
     @OneToOne

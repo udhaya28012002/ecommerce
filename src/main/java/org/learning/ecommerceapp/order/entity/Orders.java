@@ -2,6 +2,7 @@ package org.learning.ecommerceapp.order.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.*;
+import org.learning.ecommerceapp.user.entity.Users;
 
 import java.time.LocalDateTime;
 import java.util.List;
@@ -11,7 +12,7 @@ import java.util.List;
 public class Orders {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     @Column(name = "order_id")
     private long orderId;
 
@@ -23,6 +24,10 @@ public class Orders {
 
     @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL)
     private List<OrderItems> orderItemsList;
+
+    @ManyToOne
+    @JoinColumn(name = "user_id")
+    private Users users;
 
     public Orders(){}
 

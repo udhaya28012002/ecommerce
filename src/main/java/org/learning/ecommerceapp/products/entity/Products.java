@@ -1,6 +1,8 @@
 package org.learning.ecommerceapp.products.entity;
 
 import jakarta.persistence.*;
+import org.learning.ecommerceapp.category.entity.ProductCategory;
+import org.learning.ecommerceapp.inventory.entity.Inventory;
 import org.learning.ecommerceapp.order.entity.OrderItems;
 
 import java.util.List;
@@ -11,7 +13,7 @@ public class Products {
 
     @Id
     @Column(name = "product_id")
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
     private long productId;
 
     private String name;
