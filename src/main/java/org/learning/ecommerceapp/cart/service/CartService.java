@@ -15,6 +15,8 @@ import org.learning.ecommerceapp.products.exception.NoProductFound;
 import org.learning.ecommerceapp.products.service.ProductService;
 import org.learning.ecommerceapp.user.entity.Users;
 import org.learning.ecommerceapp.user.service.UserService;
+import org.slf4j.LoggerFactory;
+import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -31,6 +33,8 @@ public class CartService {
 
     private final UserService userService;
 
+    private static final Logger logger = LoggerFactory.getLogger(CartService.class);
+
     public CartService(ProductService productService, CartRepository cartRepository, CartItemRepository cartItemRepository, UserService userService) {
         this.productService = productService;
         this.cartRepository = cartRepository;
@@ -40,7 +44,7 @@ public class CartService {
 
     @Transactional
     public void addToCart(long productId, int quantity, String username) {
-
+        logger.info("Add to Cart is getting invoked");
         if (quantity <= 0) {
             throw new IllegalArgumentException("Quantity must be greater than 0");
         }
@@ -179,6 +183,7 @@ public class CartService {
     }
 
     private CartResponseDto buildResponseDto(List<CartItems> cartItemsList) {
+
 
         Map<String, List<CartItemsResponseDto>> cartCategoryMap = new HashMap<>();
 

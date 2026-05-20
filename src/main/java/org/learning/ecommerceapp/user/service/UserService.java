@@ -9,6 +9,9 @@ import org.learning.ecommerceapp.user.entity.Address;
 import org.learning.ecommerceapp.user.entity.Users;
 import org.learning.ecommerceapp.user.exception.*;
 import org.learning.ecommerceapp.user.repository.UserRepo;
+import org.springframework.security.core.userdetails.UserDetails;
+import org.springframework.security.core.userdetails.UserDetailsService;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
@@ -18,14 +21,19 @@ import java.util.ArrayList;
 import java.util.List;
 
 @Service
-public class UserService {
-
+public class UserService implements UserDetailsService {
     private final UserRepo userRepo;
+
     private final PasswordEncoder passwordEncoder;
 
     public UserService(UserRepo userRepo, PasswordEncoder passwordEncoder) {
         this.userRepo = userRepo;
         this.passwordEncoder = passwordEncoder;
+    }
+
+    @Override
+    public UserDetails loadUserByUsername(String username) throws UsernameNotFoundException {
+        return findByUsername_ForInternal(username);
     }
 
     public LoginResDto login(LoginReqDto loginReq) {
@@ -129,7 +137,7 @@ public class UserService {
         Users user = userRepo.findByUserName(username);
 
         if (user == null) {
-            throw new InvalidCredentialsException("Invalid username");
+            throw new InvalidCredentialsException("Username not found!");
         }
 
         return user;
@@ -256,7 +264,7 @@ public class UserService {
     }
 
     private boolean validatePassword(Users user, String givenPassword) {
-        return user.getPassword().equalsIgnoreCase(givenPassword);
+        return passwordEncoder.matches(givenPassword, user.getPassword());
     }
 
     private boolean isAdmin(LoginReqDto loginReq) {
@@ -278,5 +286,4 @@ public class UserService {
                 user.getAddress()
         );
     }
-
 }

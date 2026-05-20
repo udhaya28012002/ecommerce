@@ -1,16 +1,21 @@
 package org.learning.ecommerceapp.user.entity;
 
 import jakarta.persistence.*;
+import org.jspecify.annotations.Nullable;
 import org.learning.ecommerceapp.order.entity.Orders;
 import org.learning.ecommerceapp.user.commons.enums.Role;
+import org.springframework.security.core.GrantedAuthority;
+import org.springframework.security.core.authority.SimpleGrantedAuthority;
+import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
+import java.util.Collection;
 import java.util.List;
 
 @Entity
 @Table(name = "users")
-public class Users {
+public class Users implements UserDetails {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -79,10 +84,6 @@ public class Users {
         return address;
     }
 
-    public String getPassword() {
-        return password;
-    }
-
     public Role getRole() {
         return role;
     }
@@ -101,10 +102,6 @@ public class Users {
 
     public void setName(String name) {
         this.name = name;
-    }
-
-    public void setUserName(String userName) {
-        this.userName = userName;
     }
 
     public void setEmailId(String emailId) {
@@ -133,5 +130,40 @@ public class Users {
 
     public void setCreatedAt(LocalDateTime createdAt) {
         this.createdAt = createdAt;
+    }
+
+    @Override
+    public boolean isAccountNonExpired() {
+        return UserDetails.super.isAccountNonExpired();
+    }
+
+    @Override
+    public boolean isAccountNonLocked() {
+        return UserDetails.super.isAccountNonLocked();
+    }
+
+    @Override
+    public boolean isCredentialsNonExpired() {
+        return UserDetails.super.isCredentialsNonExpired();
+    }
+
+    @Override
+    public boolean isEnabled() {
+        return UserDetails.super.isEnabled();
+    }
+
+    @Override
+    public Collection<? extends GrantedAuthority> getAuthorities() {
+        return List.of(new SimpleGrantedAuthority(role.toString()));
+    }
+
+    @Override
+    public @Nullable String getPassword() {
+        return password;
+    }
+
+    @Override
+    public String getUsername() {
+        return userName;
     }
 }

@@ -179,32 +179,38 @@ public class OrderService {
         orderServiceRepository.save(orders);
     }
 
-    public void markOrderAsPending(String orderNumber){
+    public String markOrderAsPending(String orderNumber){
         updateOrderStatus(orderNumber, OrderStatus.PENDING);
+        return "Status Changed";
     }
 
-    public void markOrderAsConfirmed(String orderNumber){
+    public String markOrderAsConfirmed(String orderNumber){
         updateOrderStatus(orderNumber, OrderStatus.CONFIRMED);
+        return "Status Changed";
     }
 
-    public void markOrderAsProcessing(String orderNumber){
+    public String markOrderAsProcessing(String orderNumber){
         updateOrderStatus(orderNumber, OrderStatus.PROCESSING);
+        return "Status Changed";
     }
 
-    public void markAsShipped(String orderNumber){
+    public String markAsShipped(String orderNumber){
         updateOrderStatus(orderNumber, OrderStatus.SHIPPED);
+        return "Status Changed";
     }
 
-    public void markOrderAsOutForDelivery(String orderNumber){
+    public String markOrderAsOutForDelivery(String orderNumber){
         updateOrderStatus(orderNumber, OrderStatus.OUT_OF_DELIVERY);
+        return "Status Changed";
     }
 
-    public void markOrderAsDelivered(String orderNumber){
+    public String markOrderAsDelivered(String orderNumber){
         updateOrderStatus(orderNumber, OrderStatus.DELIVERED);
+        return "Status Changed";
     }
 
     @Transactional
-    public void cancelOrder(String orderNumber){
+    public String cancelOrder(String orderNumber){
         Orders orders = getOrder(orderNumber);
 
         validateOrderStatusUpdate(orders.getOrderStatus(), OrderStatus.CANCELLED);
@@ -216,6 +222,8 @@ public class OrderService {
         orders.setOrderStatus(OrderStatus.CANCELLED);
 
         orderServiceRepository.save(orders);
+
+        return "Order Cancelled Successfully";
     }
 
     private void revertInventory(Orders orders){
