@@ -4,7 +4,7 @@ import jakarta.validation.Valid;
 import jakarta.validation.constraints.*;
 import org.learning.ecommerceapp.user.entity.Address;
 
-public class UserReqDto {
+public class UserCreationDto {
 
     @NotBlank(message = "Name is required")
     @Size(max = 50, message = "Name length should be within 50 characters")

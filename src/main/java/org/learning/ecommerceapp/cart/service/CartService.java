@@ -15,6 +15,7 @@ import org.learning.ecommerceapp.products.exception.NoProductFound;
 import org.learning.ecommerceapp.products.service.ProductService;
 import org.learning.ecommerceapp.user.entity.Users;
 import org.learning.ecommerceapp.user.service.UserService;
+import org.learning.ecommerceapp.util.CurrentUserService;
 import org.slf4j.LoggerFactory;
 import org.slf4j.Logger;
 import org.springframework.stereotype.Service;
@@ -33,25 +34,30 @@ public class CartService {
 
     private final UserService userService;
 
+    private final CurrentUserService currentUserService;
+
     private static final Logger logger = LoggerFactory.getLogger(CartService.class);
 
-    public CartService(ProductService productService, CartRepository cartRepository, CartItemRepository cartItemRepository, UserService userService) {
+    public CartService(ProductService productService, CartRepository cartRepository, CartItemRepository cartItemRepository, UserService userService, CurrentUserService currentUserService) {
         this.productService = productService;
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.userService = userService;
+        this.currentUserService = currentUserService;
     }
 
     @Transactional
-    public void addToCart(long productId, int quantity, String username) {
-        logger.info("Add to Cart is getting invoked");
+    public void addToCart(long productId, int quantity) {
+
+        String loggedUser = currentUserService.getLoggedInUser();
+
         if (quantity <= 0) {
             throw new IllegalArgumentException("Quantity must be greater than 0");
         }
 
         Products product = productService.getProductByIdInternal(productId);
 
-        Users user = userService.findByUsername_ForInternal(username);
+        Users user = userService.findByUsername_ForInternal(loggedUser);
 
         Cart cart = cartRepository.findByUsers(user);
 
@@ -90,9 +96,11 @@ public class CartService {
     }
 
     @Transactional
-    public boolean removeFromCart(long productId, String username) {
+    public boolean removeFromCart(long productId) {
 
-        Users user = userService.findByUsername_ForInternal(username);
+        String loggedUser = currentUserService.getLoggedInUser();
+
+        Users user = userService.findByUsername_ForInternal(loggedUser);
 
         Cart cart = cartRepository.findByUsers(user);
 
@@ -110,13 +118,15 @@ public class CartService {
     }
 
     @Transactional
-    public void updateCartQuantity(long productId, int quantity, boolean positive, String username) {
+    public void updateCartQuantity(long productId, int quantity, boolean positive) {
+
+        String loggedUser = currentUserService.getLoggedInUser();
 
         if (quantity <= 0) {
             throw new IllegalArgumentException("Quantity must be greater than 0");
         }
 
-        Users user = userService.findByUsername_ForInternal(username);
+        Users user = userService.findByUsername_ForInternal(loggedUser);
 
         Cart cart = cartRepository.findByUsers(user);
 
@@ -153,8 +163,11 @@ public class CartService {
     }
 
     @Transactional
-    public void clearCart(String username) {
-        Users user = userService.findByUsername_ForInternal(username);
+    public void clearCart() {
+
+        String loggedUser = currentUserService.getLoggedInUser();
+
+        Users user = userService.findByUsername_ForInternal(loggedUser);
 
         Cart cart = cartRepository.findByUsers(user);
 
@@ -163,8 +176,11 @@ public class CartService {
         cartItemRepository.deleteByCart(cart);
     }
 
-    public CartResponseDto getUserCart(String username) {
-        Users user = userService.findByUsername_ForInternal(username);
+    public CartResponseDto getUserCart() {
+
+        String loggedUser = currentUserService.getLoggedInUser();
+
+        Users user = userService.findByUsername_ForInternal(loggedUser);
 
         Cart cart = cartRepository.findByUsers(user);
 

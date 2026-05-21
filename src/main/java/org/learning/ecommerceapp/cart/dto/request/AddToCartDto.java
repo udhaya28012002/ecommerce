@@ -9,8 +9,6 @@ public class AddToCartDto {
     @Min(1)
     private int quantity;
 
-    private String username;
-
     public long getProductId() {
         return productId;
     }
@@ -25,13 +23,5 @@ public class AddToCartDto {
 
     public void setQuantity(int quantity) {
         this.quantity = quantity;
-    }
-
-    public String getUsername() {
-        return username;
-    }
-
-    public void setUsername(String username) {
-        this.username = username;
     }
 }

@@ -73,4 +73,12 @@ public class Orders {
     public long getOrderId() {
         return orderId;
     }
+
+    public Users getUsers() {
+        return users;
+    }
+
+    public void setUsers(Users users) {
+        this.users = users;
+    }
 }

@@ -6,6 +6,7 @@ import org.learning.ecommerceapp.user.service.UserService;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -19,49 +20,62 @@ public class userController {
         this.userService = userService;
     }
 
-    @PostMapping("/login")
+    /*@PostMapping("/login")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
     public ResponseEntity<?> login(@Valid @RequestBody LoginReqDto loginReq) {
         return ResponseEntity.ok(userService.login(loginReq));
     }
 
     @PostMapping("/createUser")
+    @PreAuthorize("hasAnyRole('CUSTOMER')")
     public ResponseEntity<?> createUser(@Valid @RequestBody UserReqDto userReqDto) {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(userReqDto, false));
-    }
+    }*/
 
     @PostMapping("/getUsers")
+    @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getUsers(@Valid @RequestBody LoginReqDto loginReq) {
         return ResponseEntity.ok(userService.getAllUsers(loginReq));
     }
 
-    @PostMapping("/getUser")
+    /*@PostMapping("/getUser")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
     public ResponseEntity<?> getUser(@Valid @RequestBody LoginReqDto loginReq) {
 
         return ResponseEntity.ok(userService.getUser(loginReq));
+    }*/
+
+    @GetMapping("/getUser")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
+    public ResponseEntity<?> getUser() {
+        return ResponseEntity.ok(userService.getUserDetails());
     }
 
-    @PatchMapping("/{userName}/password")
-    public ResponseEntity<?> changePassword(
-            @PathVariable String userName,
-            @Valid @RequestBody ChangePasswordRequest request) {
+    @PatchMapping("/password")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
+    public ResponseEntity<?> changePassword(@Valid @RequestBody ChangePasswordRequest request) {
 
-        return ResponseEntity.ok(userService.changePassword(userName, request));
+        return ResponseEntity.ok(userService.changePassword(request));
     }
 
-    @PatchMapping("/{userName}/contactNo")
-    public ResponseEntity<?> changeContactNo(
-            @PathVariable String userName,
-            @Valid @RequestBody ChangeOtherDetailsReq request) {
+    @PatchMapping("/contactNo")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
+    public ResponseEntity<?> changeContactNo(@Valid @RequestBody ChangeOtherDetailsReq request) {
 
-        return ResponseEntity.ok(userService.updateContactNo(userName, request));
+        return ResponseEntity.ok(userService.updateContactNo(request));
     }
 
-    @PatchMapping("/{userName}/address")
-    public ResponseEntity<?> addAddress(
-            @PathVariable String userName,
-            @Valid @RequestBody AddAddressReq request) {
+    @PatchMapping("/address")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
+    public ResponseEntity<?> addAddress(@Valid @RequestBody AddAddressReq request) {
 
-        return ResponseEntity.status(HttpStatus.CREATED).body(userService.addAddress(userName, request));
+        return ResponseEntity.status(HttpStatus.CREATED).body(userService.addAddress(request));
+    }
+
+    @PatchMapping("/deleteUser")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
+    public ResponseEntity<?> deleteUser() {
+        return ResponseEntity.ok(userService.deleteUser());
     }
 
 

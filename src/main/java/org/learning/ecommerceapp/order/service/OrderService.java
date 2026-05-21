@@ -16,18 +16,16 @@ import org.learning.ecommerceapp.inventory.entity.Inventory;
 import org.learning.ecommerceapp.products.entity.Products;
 import org.learning.ecommerceapp.products.exception.NoProductFound;
 import org.learning.ecommerceapp.products.service.ProductService;
-import org.learning.ecommerceapp.user.commons.enums.Role;
+import org.learning.ecommerceapp.user.entity.Users;
 import org.learning.ecommerceapp.user.exception.AccessDeniedException;
 import org.learning.ecommerceapp.user.repository.UserRepo;
+import org.learning.ecommerceapp.util.CurrentUserService;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
+import java.util.*;
 
 @Service
 public class OrderService {
@@ -35,13 +33,15 @@ public class OrderService {
     private final ProductService productService;
     private final OrderServiceRepository orderServiceRepository;
     private final UserRepo userRepo;
+    private final CurrentUserService currentUserService;
 
     private static final int DEFAULT_DISCOUNT = 10;
 
-    public OrderService(ProductService productService, OrderServiceRepository orderServiceRepository, UserRepo userRepo) {
+    public OrderService(ProductService productService, OrderServiceRepository orderServiceRepository, UserRepo userRepo, CurrentUserService currentUserService) {
         this.productService = productService;
         this.orderServiceRepository = orderServiceRepository;
         this.userRepo = userRepo;
+        this.currentUserService = currentUserService;
     }
 
     public static final Map<OrderStatus, Set<OrderStatus>> VALID_STATUS_TRANSITIONS =
@@ -74,6 +74,10 @@ public class OrderService {
     @Transactional
     public OrdersResDto placeOrder(PlaceOrderRequest placeOrderRequest) {
 
+        String loggedUser = currentUserService.getLoggedInUser();
+
+        Users user = userRepo.findByUserName(loggedUser);
+
         if(placeOrderRequest.getItems() == null || placeOrderRequest.getItems().isEmpty()){
             throw new OrderItemsNotFoundException("Order info is missing");
         }
@@ -86,6 +90,7 @@ public class OrderService {
         // CREATE ORDER FIRST
         Orders order = new Orders();
         order.setOrderDate(today);
+        order.setUsers(user);
         order.setOrderNumber("ORD-" + today.format(formatter));
 
         // CREATE ORDER ITEMS
@@ -110,15 +115,26 @@ public class OrderService {
     }
 
     public OrdersResDto getOrderByOrderNumber(String orderNumber) {
+
+        String loggedUser = currentUserService.getLoggedInUser();
+
         Orders orders = orderServiceRepository.findByOrderNumber(orderNumber);
+
         if (orders == null) {
             throw new OrderNotFoundException("No Orders present with this OrderNumber : " + orderNumber);
+        }
+
+        if(!orders.getUsers().getUserName().equals(loggedUser)){
+            throw new OrderNotFoundException("No Order Found");
         }
         return buildOrderResDto(orders);
     }
 
-    public List<OrdersResDto> getUserOrdersByUserName(String userName) {
-        List<Orders> orders = orderServiceRepository.findByUsers_UserName(userName);
+    public List<OrdersResDto> getUserOrdersByUserName() {
+
+        String loggedUser = currentUserService.getLoggedInUser();
+
+        List<Orders> orders = orderServiceRepository.findByUsers_UserName(loggedUser);
 
         if (orders.isEmpty()) {
             throw new OrderNotFoundException("No orders found.");
@@ -129,7 +145,14 @@ public class OrderService {
                 .toList();
     }
 
-    public List<OrdersResDto> getUserOrdersByEmailId(String emailId) {
+    /*public List<OrdersResDto> getUserOrdersByEmailId(String emailId) {
+
+        String loggedUser = currentUserService.getLoggedInUser();
+
+        if(!userRepo.findByUserName(loggedUser).getEmailId().equals(emailId)){
+            throw new AccessDeniedException("Access Denied");
+        }
+
         List<Orders> orders = orderServiceRepository.findByUsers_EmailId(emailId);
 
         if (orders.isEmpty()) {
@@ -151,12 +174,9 @@ public class OrderService {
         return orders.stream()
                 .map(this::buildOrderResDto)
                 .toList();
-    }
+    }*/
 
-    public List<OrdersResDto> getAllOrders(String userName) {
-        if (!userRepo.findByUserName(userName).getRole().equals(Role.ADMIN)) {
-            throw new AccessDeniedException("Access Denied!");
-        }
+    public List<OrdersResDto> getAllOrders() {
 
         List<Orders> ordersList = orderServiceRepository.findAll();
 
@@ -211,7 +231,14 @@ public class OrderService {
 
     @Transactional
     public String cancelOrder(String orderNumber){
+
+        String loggedUser = currentUserService.getLoggedInUser();
+
         Orders orders = getOrder(orderNumber);
+
+        if(!orders.getUsers().getUserName().equals(loggedUser)){
+            throw new AccessDeniedException("Access Denied");
+        }
 
         validateOrderStatusUpdate(orders.getOrderStatus(), OrderStatus.CANCELLED);
 

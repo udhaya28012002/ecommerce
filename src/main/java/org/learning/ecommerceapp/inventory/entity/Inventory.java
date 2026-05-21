@@ -24,7 +24,6 @@ public class Inventory {
         this.inventoryId = inventoryId;
     }
 
-
     public Products getProduct() {
         return products;
     }

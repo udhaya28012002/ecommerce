@@ -3,11 +3,10 @@ package org.learning.ecommerceapp.user.entity;
 import jakarta.persistence.*;
 import org.jspecify.annotations.Nullable;
 import org.learning.ecommerceapp.order.entity.Orders;
-import org.learning.ecommerceapp.user.commons.enums.Role;
+import org.learning.ecommerceapp.user.enums.Role;
 import org.springframework.security.core.GrantedAuthority;
 import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.stereotype.Repository;
 
 import java.time.LocalDateTime;
 import java.util.Collection;
@@ -154,7 +153,7 @@ public class Users implements UserDetails {
 
     @Override
     public Collection<? extends GrantedAuthority> getAuthorities() {
-        return List.of(new SimpleGrantedAuthority(role.toString()));
+        return List.of(new SimpleGrantedAuthority(this.role.name()));
     }
 
     @Override

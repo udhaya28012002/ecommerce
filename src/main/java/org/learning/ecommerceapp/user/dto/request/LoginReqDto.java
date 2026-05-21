@@ -22,7 +22,7 @@ public class LoginReqDto {
         this.password = password;
     }
 
-    public String getLoginMethod() {
+   public String getLoginMethod() {
         return loginMethod;
     }
 

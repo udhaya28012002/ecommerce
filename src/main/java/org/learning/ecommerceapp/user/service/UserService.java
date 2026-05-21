@@ -1,14 +1,17 @@
 package org.learning.ecommerceapp.user.service;
 
-import org.learning.ecommerceapp.user.commons.enums.Role;
+import org.learning.ecommerceapp.user.enums.Role;
 import org.learning.ecommerceapp.user.dto.request.*;
 import org.learning.ecommerceapp.user.dto.response.InfoDto;
-import org.learning.ecommerceapp.user.dto.response.LoginResDto;
 import org.learning.ecommerceapp.user.dto.response.UserResDto;
 import org.learning.ecommerceapp.user.entity.Address;
 import org.learning.ecommerceapp.user.entity.Users;
+import org.learning.ecommerceapp.user.enums.UserStatus;
 import org.learning.ecommerceapp.user.exception.*;
 import org.learning.ecommerceapp.user.repository.UserRepo;
+import org.learning.ecommerceapp.util.CurrentUserService;
+import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
@@ -22,13 +25,17 @@ import java.util.List;
 
 @Service
 public class UserService implements UserDetailsService {
+
     private final UserRepo userRepo;
 
     private final PasswordEncoder passwordEncoder;
 
-    public UserService(UserRepo userRepo, PasswordEncoder passwordEncoder) {
+    private final CurrentUserService currentUserService;
+
+    public UserService(UserRepo userRepo, PasswordEncoder passwordEncoder, CurrentUserService currentUserService) {
         this.userRepo = userRepo;
         this.passwordEncoder = passwordEncoder;
+        this.currentUserService = currentUserService;
     }
 
     @Override
@@ -36,7 +43,7 @@ public class UserService implements UserDetailsService {
         return findByUsername_ForInternal(username);
     }
 
-    public LoginResDto login(LoginReqDto loginReq) {
+    /*public LoginResDto login(LoginReqDto loginReq) {
 
         Users user = userRepo.findByUserName(loginReq.getUsername());
 
@@ -45,12 +52,12 @@ public class UserService implements UserDetailsService {
         }
 
         return new LoginResDto("Login successful");
-    }
+    }*/
 
-    public UserResDto createUser(UserReqDto dto, boolean isAdmin) {
-        Role role = isAdmin ? Role.ADMIN : Role.CUSTOMER;
+    public UserResDto createUser(UserCreationDto dto, boolean isAdmin) {
+        Role role = isAdmin ? Role.ROLE_ADMIN : Role.ROLE_CUSTOMER;
 
-        if (isPasswordMatch(dto.getPassword(), dto.getConfirmPassword())) {
+        if (isPasswordMismatch(dto.getPassword(), dto.getConfirmPassword())) {
             throw new PasswordMismatchException("Password and Confirm Password do not match");
         }
 
@@ -76,7 +83,7 @@ public class UserService implements UserDetailsService {
                 addresses,
                 passwordEncoder.encode(dto.getPassword()),
                 role,
-                "active",
+                UserStatus.ACTIVE.name(),
                 LocalDateTime.now()
         );
 
@@ -107,7 +114,7 @@ public class UserService implements UserDetailsService {
                 )).toList();
     }
 
-    public UserResDto getUser(LoginReqDto loginReq) {
+    /*public UserResDto getUser(LoginReqDto loginReq) {
 
         if (loginReq.getLoginMethod() == null || loginReq.getLoginMethod().isBlank()) {
             throw new ResourceNotFoundException("Login Method should be defined");
@@ -130,20 +137,36 @@ public class UserService implements UserDetailsService {
             }
         }
         throw new IllegalArgumentException("No filter provided");
-    }
+    }*/
 
 
     public Users findByUsername_ForInternal(String username){
         Users user = userRepo.findByUserName(username);
 
         if (user == null) {
-            throw new InvalidCredentialsException("Username not found!");
+            throw new UsernameNotFoundException("Username not found!");
+        }
+        if(user.getStatus().equals(UserStatus.DEACTIVATED.name())){
+            throw new DisabledException("Account inactive");
         }
 
         return user;
     }
 
-    private Users getUserByUserName(String username, String givenPass) {
+    public UserResDto getUserDetails() {
+
+        String loggedUser = currentUserService.getLoggedInUser();
+
+        Users user = userRepo.findByUserName(loggedUser);
+
+        if (user == null) {
+            throw new ResourceNotFoundException("User not found");
+        }
+
+        return populateUserDto(user);
+    }
+
+    /*private Users getUserByUserName(String username, String givenPass) {
 
         Users user = userRepo.findByUserName(username);
 
@@ -174,19 +197,30 @@ public class UserService implements UserDetailsService {
         }
 
         return user;
-    }
+    }*/
 
     @Transactional
-    public InfoDto changePassword(String userName, ChangePasswordRequest changePasswordRequest) {
+    public InfoDto changePassword(ChangePasswordRequest changePasswordRequest) {
 
-        if (isPasswordMatch(changePasswordRequest.getNewPassword(), changePasswordRequest.getConfirmPassword())) {
+        String loggedUser = currentUserService.getLoggedInUser();
+
+        if (isPasswordMismatch(changePasswordRequest.getNewPassword(), changePasswordRequest.getConfirmPassword())) {
             throw new PasswordMismatchException("Password and Confirm Password do not match");
         }
 
-        Users user = userRepo.findByUserName(userName);
+        Users user = userRepo.findByUserName(loggedUser);
 
         if (user == null || !validatePassword(user, changePasswordRequest.getOldPassword())) {
             throw new InvalidCredentialsException("Invalid username or password");
+        }
+
+        if(passwordEncoder.matches(
+                changePasswordRequest.getNewPassword(),
+                user.getPassword())) {
+
+            throw new IllegalArgumentException(
+                    "New password cannot be same as old password"
+            );
         }
 
         user.setPassword(passwordEncoder.encode(changePasswordRequest.getNewPassword()));
@@ -195,9 +229,11 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional
-    public InfoDto updateContactNo(String userName, ChangeOtherDetailsReq changeOtherDetailsReq) {
+    public InfoDto updateContactNo(ChangeOtherDetailsReq changeOtherDetailsReq) {
 
-        Users user = userRepo.findByUserName(userName);
+        String loggedUser = currentUserService.getLoggedInUser();
+
+        Users user = userRepo.findByUserName(loggedUser);
 
         if (user == null) {
             throw new ResourceNotFoundException("User not found");
@@ -209,9 +245,11 @@ public class UserService implements UserDetailsService {
     }
 
     @Transactional
-    public InfoDto addAddress(String userName, AddAddressReq addAddressReq) {
+    public InfoDto addAddress(AddAddressReq addAddressReq) {
 
-        Users user = userRepo.findByUserName(userName);
+        String loggedUser = currentUserService.getLoggedInUser();
+
+        Users user = userRepo.findByUserName(loggedUser);
 
         if (user == null) {
             throw new ResourceNotFoundException("User not found");
@@ -235,16 +273,22 @@ public class UserService implements UserDetailsService {
         return new InfoDto("New Address has been added successfully");
     }
 
-    public InfoDto deleteUser(String username, String password) {
-        Users user = userRepo.findByUserName(username);
+    @Transactional
+    public InfoDto deleteUser() {
 
-        if (user == null || !validatePassword(user, password)) {
-            throw new InvalidCredentialsException("Invalid username or password");
+        String loggedUser = currentUserService.getLoggedInUser();
+
+        Users user = userRepo.findByUserName(loggedUser);
+
+        if (user == null) {
+            throw new InvalidCredentialsException("UserNotFound");
         }
 
-        userRepo.deleteById(user.getId());
+        user.setStatus(UserStatus.DEACTIVATED.name());
 
-        return new InfoDto("User deleted successfully");
+        SecurityContextHolder.clearContext();
+
+        return new InfoDto("Account deactivated successfully");
     }
 
     private boolean isUsernameAvailable(String username) {
@@ -259,7 +303,7 @@ public class UserService implements UserDetailsService {
         return userRepo.existsByContactNo(contactNo);
     }
 
-    private boolean isPasswordMatch(String password, String confirmPassword) {
+    private boolean isPasswordMismatch(String password, String confirmPassword) {
         return !password.equalsIgnoreCase(confirmPassword);
     }
 
@@ -274,7 +318,7 @@ public class UserService implements UserDetailsService {
             return false;
         }
 
-        return user.getRole() == Role.ADMIN;
+        return user.getRole() == Role.ROLE_ADMIN;
     }
 
     private UserResDto populateUserDto(Users user) {
