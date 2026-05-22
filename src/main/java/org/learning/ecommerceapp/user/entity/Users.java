@@ -2,6 +2,8 @@ package org.learning.ecommerceapp.user.entity;
 
 import jakarta.persistence.*;
 import org.jspecify.annotations.Nullable;
+import org.learning.ecommerceapp.cart.entity.Cart;
+import org.learning.ecommerceapp.discount.entity.DiscountOnUsers;
 import org.learning.ecommerceapp.order.entity.Orders;
 import org.learning.ecommerceapp.user.enums.Role;
 import org.springframework.security.core.GrantedAuthority;
@@ -11,6 +13,7 @@ import org.springframework.security.core.userdetails.UserDetails;
 import java.time.LocalDateTime;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 @Entity
 @Table(name = "users")
@@ -45,7 +48,21 @@ public class Users implements UserDetails {
     @OneToMany(mappedBy = "users", cascade = CascadeType.ALL)
     private List<Orders> orders;
 
+    @OneToOne(mappedBy = "users", cascade = CascadeType.ALL)
+    private Cart cart;
+
+    @OneToMany(mappedBy = "users", cascade = CascadeType.ALL)
+    private Set<DiscountOnUsers> discountOnUsers;
+
     public Users(){}
+
+    public Set<DiscountOnUsers> getDiscountOnUsers() {
+        return discountOnUsers;
+    }
+
+    public void setDiscountOnUsers(Set<DiscountOnUsers> discountOnUsers) {
+        this.discountOnUsers = discountOnUsers;
+    }
 
     public Users(String name, String userName, String emailId, String contactNo, List<Address> address, String password, Role role, String status, LocalDateTime createdAt) {
         this.name = name;
@@ -57,6 +74,14 @@ public class Users implements UserDetails {
         this.role = role;
         this.status = status;
         this.createdAt = createdAt;
+    }
+
+    public Cart getCart() {
+        return cart;
+    }
+
+    public void setCart(Cart cart) {
+        this.cart = cart;
     }
 
     public Long getId() {
@@ -164,5 +189,13 @@ public class Users implements UserDetails {
     @Override
     public String getUsername() {
         return userName;
+    }
+
+    public List<Orders> getOrders() {
+        return orders;
+    }
+
+    public void setOrders(List<Orders> orders) {
+        this.orders = orders;
     }
 }

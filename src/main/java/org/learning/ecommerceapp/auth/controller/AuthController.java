@@ -1,11 +1,11 @@
 package org.learning.ecommerceapp.auth.controller;
 
 import jakarta.validation.Valid;
-import jakarta.validation.constraints.NotNull;
 import org.learning.ecommerceapp.user.dto.request.LoginReqDto;
 import org.learning.ecommerceapp.auth.util.JWTUtil;
 import org.learning.ecommerceapp.user.dto.request.UserCreationDto;
 import org.learning.ecommerceapp.user.dto.response.UserResDto;
+import org.learning.ecommerceapp.user.service.RegistrationService;
 import org.learning.ecommerceapp.user.service.UserService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -20,14 +20,14 @@ import org.springframework.web.bind.annotation.RestController;
 @RestController
 public class AuthController {
 
-    private final UserService userService;
+    private final RegistrationService registrationService;
 
     private final AuthenticationManager authenticationManager;
 
     private final JWTUtil jwtUtil;
 
-    public AuthController(UserService userService, AuthenticationManager authenticationManager, JWTUtil jwtUtil) {
-        this.userService = userService;
+    public AuthController(RegistrationService registrationService, AuthenticationManager authenticationManager, JWTUtil jwtUtil) {
+        this.registrationService = registrationService;
         this.authenticationManager = authenticationManager;
         this.jwtUtil = jwtUtil;
     }
@@ -49,6 +49,7 @@ public class AuthController {
             return ResponseEntity.ok(token);
 
         } catch (Exception e) {
+            System.out.println(e);
             throw e;
         }
     }
@@ -56,7 +57,7 @@ public class AuthController {
     @PostMapping("/createUser")
     public ResponseEntity<String> createUser(@Valid @RequestBody UserCreationDto userCreationInfo) {
 
-        UserResDto createdUser = userService.createUser(userCreationInfo, false);
+        UserResDto createdUser = registrationService.registerUser(userCreationInfo, false);
 
         try {
             Authentication authentication = authenticationManager.authenticate(
@@ -73,6 +74,7 @@ public class AuthController {
             return ResponseEntity.status(HttpStatus.CREATED).body(token);
 
         } catch (Exception e) {
+            System.out.println(e);
             throw e;
         }
     }

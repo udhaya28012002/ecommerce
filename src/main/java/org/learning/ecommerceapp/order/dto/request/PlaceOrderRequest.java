@@ -6,12 +6,18 @@ import java.util.List;
 
 public class PlaceOrderRequest {
 
+    private String couponCode;
+
     @NotEmpty
     private List<OrderItemRequestDto> items;
 
-    // optional fields
-    // private Long addressId;
-    // private String paymentMethod;
+    public String getCouponCode() {
+        return couponCode;
+    }
+
+    public void setCouponCode(String couponCode) {
+        this.couponCode = couponCode;
+    }
 
     public List<OrderItemRequestDto> getItems() {
         return items;

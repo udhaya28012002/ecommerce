@@ -54,7 +54,7 @@ public class UserService implements UserDetailsService {
         return new LoginResDto("Login successful");
     }*/
 
-    public UserResDto createUser(UserCreationDto dto, boolean isAdmin) {
+    public Users createUser(UserCreationDto dto, boolean isAdmin) {
         Role role = isAdmin ? Role.ROLE_ADMIN : Role.ROLE_CUSTOMER;
 
         if (isPasswordMismatch(dto.getPassword(), dto.getConfirmPassword())) {
@@ -87,9 +87,7 @@ public class UserService implements UserDetailsService {
                 LocalDateTime.now()
         );
 
-        Users insertedUser = userRepo.save(user);
-
-        return new UserResDto(insertedUser.getName(), insertedUser.getUserName(), insertedUser.getEmailId(), insertedUser.getContactNo(), insertedUser.getAddress());
+        return userRepo.save(user);
     }
 
     public List<UserResDto> getAllUsers(LoginReqDto loginReq) {
@@ -139,6 +137,9 @@ public class UserService implements UserDetailsService {
         throw new IllegalArgumentException("No filter provided");
     }*/
 
+    public List<Users> findAllUsers_ForInternal(){
+        return userRepo.findAll();
+    }
 
     public Users findByUsername_ForInternal(String username){
         Users user = userRepo.findByUserName(username);

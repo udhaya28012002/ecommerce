@@ -16,6 +16,26 @@ public class OrdersResDto {
 
     private List<OrderItemsResponseDto> orderItemsResponse;
 
+    public String getAppliedCoupon() {
+        return appliedCoupon;
+    }
+
+    public void setAppliedCoupon(String appliedCoupon) {
+        this.appliedCoupon = appliedCoupon;
+    }
+
+    private String appliedCoupon;
+    private double finalPrice;
+
+
+    public double getFinalPrice() {
+        return finalPrice;
+    }
+
+    public void setFinalPrice(double finalPrice) {
+        this.finalPrice = finalPrice;
+    }
+
     public List<OrderItemsResponseDto> getOrderItemsResponse() {
         return orderItemsResponse;
     }

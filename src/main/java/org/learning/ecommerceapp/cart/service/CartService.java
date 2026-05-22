@@ -8,7 +8,12 @@ import org.learning.ecommerceapp.cart.entity.CartItems;
 import org.learning.ecommerceapp.cart.exception.CartEmptyException;
 import org.learning.ecommerceapp.cart.repository.CartItemRepository;
 import org.learning.ecommerceapp.cart.repository.CartRepository;
+import org.learning.ecommerceapp.order.dto.request.OrderItemRequestDto;
+import org.learning.ecommerceapp.order.dto.request.PlaceOrderRequest;
+import org.learning.ecommerceapp.order.dto.response.OrderItemsResponseDto;
+import org.learning.ecommerceapp.order.entity.OrderItems;
 import org.learning.ecommerceapp.order.exception.ProductOutOfStockException;
+import org.learning.ecommerceapp.order.service.OrderService;
 import org.learning.ecommerceapp.products.entity.Products;
 import org.learning.ecommerceapp.inventory.exception.InvalidInventoryException;
 import org.learning.ecommerceapp.products.exception.NoProductFound;
@@ -34,15 +39,18 @@ public class CartService {
 
     private final UserService userService;
 
+    private final OrderService orderService;
+
     private final CurrentUserService currentUserService;
 
     private static final Logger logger = LoggerFactory.getLogger(CartService.class);
 
-    public CartService(ProductService productService, CartRepository cartRepository, CartItemRepository cartItemRepository, UserService userService, CurrentUserService currentUserService) {
+    public CartService(ProductService productService, CartRepository cartRepository, CartItemRepository cartItemRepository, UserService userService, OrderService orderService, CurrentUserService currentUserService) {
         this.productService = productService;
         this.cartRepository = cartRepository;
         this.cartItemRepository = cartItemRepository;
         this.userService = userService;
+        this.orderService = orderService;
         this.currentUserService = currentUserService;
     }
 
@@ -190,6 +198,7 @@ public class CartService {
 
         return buildResponseDto(cart.getCartItemsList());
     }
+
 
     private void validateStockAvailability(int stockQuantity, int requestedQuantity) {
 

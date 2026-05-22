@@ -32,14 +32,25 @@ public class OrderItems {
 
     private double totalPrice;
 
+    private double deliveryCharge;
+
     public OrderItems(){}
-    public OrderItems(Products products, Orders orders, int quantity, double sellingPrice, int discount, double totalPrice) {
+    public OrderItems(Products products, Orders orders, int quantity, double sellingPrice, int discount, double totalPrice, double deliveryCharge) {
         this.products = products;
         this.orders = orders;
         this.quantity = quantity;
         this.sellingPrice = sellingPrice;
         this.discount = discount;
         this.totalPrice = totalPrice;
+        this.deliveryCharge = deliveryCharge;
+    }
+
+    public double getDeliveryCharge() {
+        return deliveryCharge;
+    }
+
+    public void setDeliveryCharge(double deliveryCharge) {
+        this.deliveryCharge = deliveryCharge;
     }
 
     public Products getProduct() {

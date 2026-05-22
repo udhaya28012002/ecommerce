@@ -1,6 +1,9 @@
 package org.learning.ecommerceapp.globalException;
 
 import org.learning.ecommerceapp.cart.exception.CartEmptyException;
+import org.learning.ecommerceapp.discount.exception.DiscountNotApplicable;
+import org.learning.ecommerceapp.discount.exception.DuplicateDiscountException;
+import org.learning.ecommerceapp.discount.exception.NoCouponAvailable;
 import org.learning.ecommerceapp.order.exception.OrderItemsNotFoundException;
 import org.learning.ecommerceapp.order.exception.OrderNotFoundException;
 import org.learning.ecommerceapp.order.exception.OrderStatusUpdateException;
@@ -26,6 +29,24 @@ public class GlobalExceptionHandler {
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<?> handleNotFound(ResourceNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(DiscountNotApplicable.class)
+    public ResponseEntity<?> discountNotApplicable(DiscountNotApplicable ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(NoCouponAvailable.class)
+    public ResponseEntity<?> NoCouponAvailable(NoCouponAvailable ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(DuplicateDiscountException.class)
+    public ResponseEntity<?> duplicateDiscountFound(DuplicateDiscountException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
                 .body(ex.getMessage());
     }
 

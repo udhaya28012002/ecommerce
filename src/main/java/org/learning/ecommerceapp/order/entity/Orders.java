@@ -25,17 +25,30 @@ public class Orders {
     @OneToMany(mappedBy = "orders", cascade = CascadeType.ALL)
     private List<OrderItems> orderItemsList;
 
+    private double finalPrice;
+
+    public String getAppliedCoupon() {
+        return appliedCoupon;
+    }
+
+    public void setAppliedCoupon(String appliedCoupon) {
+        this.appliedCoupon = appliedCoupon;
+    }
+
+    private String appliedCoupon;
+
     @ManyToOne
     @JoinColumn(name = "user_id")
     private Users users;
 
     public Orders(){}
 
-    public Orders(LocalDateTime orderDate, OrderStatus orderStatus, List<OrderItems> orderItemsList, String orderNumber) {
+    public Orders(LocalDateTime orderDate, OrderStatus orderStatus, List<OrderItems> orderItemsList, String orderNumber, double finalPrice) {
         this.orderDate = orderDate;
         this.orderStatus = orderStatus;
         this.orderItemsList = orderItemsList;
         this.orderNumber = orderNumber;
+        this.finalPrice = finalPrice;
     }
 
     public String getOrderNumber() {
@@ -80,5 +93,13 @@ public class Orders {
 
     public void setUsers(Users users) {
         this.users = users;
+    }
+
+    public double getFinalPrice() {
+        return finalPrice;
+    }
+
+    public void setFinalPrice(double finalPrice) {
+        this.finalPrice = finalPrice;
     }
 }

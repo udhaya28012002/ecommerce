@@ -1,5 +1,11 @@
 package org.learning.ecommerceapp.order.service;
 
+import org.learning.ecommerceapp.cart.entity.Cart;
+import org.learning.ecommerceapp.cart.entity.CartItems;
+import org.learning.ecommerceapp.cart.exception.CartEmptyException;
+import org.learning.ecommerceapp.discount.dto.ApplyCouponResponse;
+import org.learning.ecommerceapp.discount.exception.NoCouponAvailable;
+import org.learning.ecommerceapp.discount.service.DiscountService;
 import org.learning.ecommerceapp.order.dto.request.OrderItemRequestDto;
 import org.learning.ecommerceapp.order.dto.request.PlaceOrderRequest;
 import org.learning.ecommerceapp.order.dto.response.OrderItemsResponseDto;
@@ -20,6 +26,8 @@ import org.learning.ecommerceapp.user.entity.Users;
 import org.learning.ecommerceapp.user.exception.AccessDeniedException;
 import org.learning.ecommerceapp.user.repository.UserRepo;
 import org.learning.ecommerceapp.util.CurrentUserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -34,14 +42,18 @@ public class OrderService {
     private final OrderServiceRepository orderServiceRepository;
     private final UserRepo userRepo;
     private final CurrentUserService currentUserService;
+    private final DiscountService discountService;
 
-    private static final int DEFAULT_DISCOUNT = 10;
+    private static final int DEFAULT_DISCOUNT = 0;
 
-    public OrderService(ProductService productService, OrderServiceRepository orderServiceRepository, UserRepo userRepo, CurrentUserService currentUserService) {
+    private final Logger logger = LoggerFactory.getLogger(OrderService.class);
+
+    public OrderService(ProductService productService, OrderServiceRepository orderServiceRepository, UserRepo userRepo, CurrentUserService currentUserService, DiscountService discountService) {
         this.productService = productService;
         this.orderServiceRepository = orderServiceRepository;
         this.userRepo = userRepo;
         this.currentUserService = currentUserService;
+        this.discountService = discountService;
     }
 
     public static final Map<OrderStatus, Set<OrderStatus>> VALID_STATUS_TRANSITIONS =
@@ -74,11 +86,16 @@ public class OrderService {
     @Transactional
     public OrdersResDto placeOrder(PlaceOrderRequest placeOrderRequest) {
 
+
+        int discount = 0;
+
+        double deliveryCharge = 0;
+
         String loggedUser = currentUserService.getLoggedInUser();
 
         Users user = userRepo.findByUserName(loggedUser);
 
-        if(placeOrderRequest.getItems() == null || placeOrderRequest.getItems().isEmpty()){
+        if (placeOrderRequest.getItems() == null || placeOrderRequest.getItems().isEmpty()) {
             throw new OrderItemsNotFoundException("Order info is missing");
         }
 
@@ -94,7 +111,19 @@ public class OrderService {
         order.setOrderNumber("ORD-" + today.format(formatter));
 
         // CREATE ORDER ITEMS
-        List<OrderItems> orderItemsList = buildOrderItems(placeOrderRequest, order);
+        List<OrderItems> orderItemsList = buildOrderItems(placeOrderRequest, order, discount, deliveryCharge);
+
+        //Calculate total Price to apply the coupon
+        double totalPricePerOrder = orderItemsList.stream()
+                .mapToDouble(OrderItems::getTotalPrice)
+                .sum();
+
+        ApplyCouponResponse applyCouponResponse = checkCouponsAndRedeem(placeOrderRequest.getCouponCode(), totalPricePerOrder);;
+
+        double finalPrice = applyCouponResponse.getFinalPrice();
+        order.setFinalPrice(finalPrice);
+
+        order.setAppliedCoupon(applyCouponResponse.getCouponName());
 
         // LINK ITEMS TO ORDER
         order.setOrderItemsList(orderItemsList);
@@ -114,6 +143,58 @@ public class OrderService {
         return buildOrderResDto(savedOrder);
     }
 
+    public void checkOut() {
+
+        String loggedUser = currentUserService.getLoggedInUser();
+
+        Users user = userRepo.findByUserName(loggedUser);
+
+        Cart cart = user.getCart();
+
+        if (cart == null || cart.getCartItemsList().isEmpty()) {
+            throw new CartEmptyException("No products available in cart");
+        }
+
+        PlaceOrderRequest prepareOrderReq = new PlaceOrderRequest();
+        prepareOrderReq.setItems(prepareOrderFromCart(cart.getCartItemsList()));
+        placeOrder(prepareOrderReq);
+    }
+
+    private ApplyCouponResponse checkCouponsAndRedeem(String coupon, double totalPricePerOrder) {
+
+        if (!discountService.validateCoupon(coupon)) {
+            logger.info("Coupon Code Is Not Available");
+            ApplyCouponResponse couponResponse = new ApplyCouponResponse();
+            couponResponse.setApplied(false);
+            couponResponse.setMessage("No Coupon is applied");
+            couponResponse.setFinalPrice(totalPricePerOrder);
+            return couponResponse;
+        }
+
+        ApplyCouponResponse applyCouponResponse = discountService.applyDiscountByUsers(coupon, totalPricePerOrder);
+
+        if (!applyCouponResponse.isApplied()) {
+            logger.info(applyCouponResponse.getMessage());
+        }
+
+        return applyCouponResponse;
+    }
+
+    private List<OrderItemRequestDto> prepareOrderFromCart(List<CartItems> cartItems) {
+
+        List<OrderItemRequestDto> orderItemsList = new ArrayList<>();
+
+        for (CartItems cartItem : cartItems) {
+            OrderItemRequestDto orderItemRequestDto = new OrderItemRequestDto();
+            orderItemRequestDto.setProductId(cartItem.getProducts().getProductId());
+            orderItemRequestDto.setQuantity(cartItem.getQuantity());
+            orderItemsList.add(orderItemRequestDto);
+        }
+
+        return orderItemsList;
+    }
+
+
     public OrdersResDto getOrderByOrderNumber(String orderNumber) {
 
         String loggedUser = currentUserService.getLoggedInUser();
@@ -124,7 +205,7 @@ public class OrderService {
             throw new OrderNotFoundException("No Orders present with this OrderNumber : " + orderNumber);
         }
 
-        if(!orders.getUsers().getUserName().equals(loggedUser)){
+        if (!orders.getUsers().getUserName().equals(loggedUser)) {
             throw new OrderNotFoundException("No Order Found");
         }
         return buildOrderResDto(orders);
@@ -199,44 +280,44 @@ public class OrderService {
         orderServiceRepository.save(orders);
     }
 
-    public String markOrderAsPending(String orderNumber){
+    public String markOrderAsPending(String orderNumber) {
         updateOrderStatus(orderNumber, OrderStatus.PENDING);
         return "Status Changed";
     }
 
-    public String markOrderAsConfirmed(String orderNumber){
+    public String markOrderAsConfirmed(String orderNumber) {
         updateOrderStatus(orderNumber, OrderStatus.CONFIRMED);
         return "Status Changed";
     }
 
-    public String markOrderAsProcessing(String orderNumber){
+    public String markOrderAsProcessing(String orderNumber) {
         updateOrderStatus(orderNumber, OrderStatus.PROCESSING);
         return "Status Changed";
     }
 
-    public String markAsShipped(String orderNumber){
+    public String markAsShipped(String orderNumber) {
         updateOrderStatus(orderNumber, OrderStatus.SHIPPED);
         return "Status Changed";
     }
 
-    public String markOrderAsOutForDelivery(String orderNumber){
+    public String markOrderAsOutForDelivery(String orderNumber) {
         updateOrderStatus(orderNumber, OrderStatus.OUT_OF_DELIVERY);
         return "Status Changed";
     }
 
-    public String markOrderAsDelivered(String orderNumber){
+    public String markOrderAsDelivered(String orderNumber) {
         updateOrderStatus(orderNumber, OrderStatus.DELIVERED);
         return "Status Changed";
     }
 
     @Transactional
-    public String cancelOrder(String orderNumber){
+    public String cancelOrder(String orderNumber) {
 
         String loggedUser = currentUserService.getLoggedInUser();
 
         Orders orders = getOrder(orderNumber);
 
-        if(!orders.getUsers().getUserName().equals(loggedUser)){
+        if (!orders.getUsers().getUserName().equals(loggedUser)) {
             throw new AccessDeniedException("Access Denied");
         }
 
@@ -253,17 +334,17 @@ public class OrderService {
         return "Order Cancelled Successfully";
     }
 
-    private void revertInventory(Orders orders){
+    private void revertInventory(Orders orders) {
         List<OrderItems> orderItemsList = orders.getOrderItemsList();
 
-        if(orderItemsList.isEmpty()){
+        if (orderItemsList.isEmpty()) {
             throw new OrderItemsNotFoundException("No Order Items Found");
         }
 
-        for(OrderItems orderItems : orderItemsList){
+        for (OrderItems orderItems : orderItemsList) {
             Products products = orderItems.getProduct();
 
-            if(products == null){
+            if (products == null) {
                 throw new NoProductFound("No Product Found");
             }
 
@@ -272,7 +353,7 @@ public class OrderService {
         }
     }
 
-    private Orders getOrder(String orderNumber){
+    private Orders getOrder(String orderNumber) {
         Orders orders = orderServiceRepository.findByOrderNumber(orderNumber);
 
         if (orders == null) {
@@ -320,7 +401,8 @@ public class OrderService {
                         ))
                         .toList()
         );
-
+        ordersResDto.setFinalPrice(savedOrder.getFinalPrice());
+        ordersResDto.setAppliedCoupon(savedOrder.getAppliedCoupon());
         return ordersResDto;
     }
 
@@ -341,7 +423,7 @@ public class OrderService {
         }
     }
 
-    private List<OrderItems> buildOrderItems(PlaceOrderRequest placeOrderRequest, Orders order) {
+    private List<OrderItems> buildOrderItems(PlaceOrderRequest placeOrderRequest, Orders order, int discount, double deliveryCharge) {
         List<OrderItems> orderItemsList = new ArrayList<>();
         for (OrderItemRequestDto dto : placeOrderRequest.getItems()) {
 
@@ -351,15 +433,17 @@ public class OrderService {
 
             validateIfProductIsAvailableForOrder(inventoryStock, dto.getQuantity());
 
+            double discountForProduct = (discount > 0) ? dto.getQuantity() * calculateOfferPrice(discount, product.getPrice()) + deliveryCharge : dto.getQuantity() * product.getPrice() + deliveryCharge;
+
             OrderItems item = new OrderItems(
                     product,
                     order,
                     dto.getQuantity(),
                     product.getPrice(),
                     DEFAULT_DISCOUNT,
-                    dto.getQuantity() * calculateOfferPrice(10, product.getPrice())
+                    discountForProduct,
+                    deliveryCharge
             );
-
 
             orderItemsList.add(item);
         }
