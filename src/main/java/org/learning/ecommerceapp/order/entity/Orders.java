@@ -1,7 +1,6 @@
 package org.learning.ecommerceapp.order.entity;
 
 import jakarta.persistence.*;
-import jakarta.validation.constraints.*;
 import org.learning.ecommerceapp.user.entity.Users;
 
 import java.time.LocalDateTime;

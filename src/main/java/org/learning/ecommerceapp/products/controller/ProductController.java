@@ -5,8 +5,6 @@ import org.learning.ecommerceapp.products.service.ProductService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
-import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -27,14 +25,14 @@ public class ProductController {
 
     @GetMapping("/listAllProducts")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
-    public ResponseEntity<?> getAllProducts(){
-        return ResponseEntity.ok(productService.showAllProducts());
+    public ResponseEntity<?> getAllProducts(@RequestParam int page, @RequestParam int size){
+        return ResponseEntity.ok(productService.showAllProducts(page, size));
     }
 
     @GetMapping("/listProductByCategory/{categoryId}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
-    public ResponseEntity<?> getProductsByCategory(@PathVariable long categoryId){
-        return ResponseEntity.ok(productService.listProductsBasedOnCategory(categoryId));
+    public ResponseEntity<?> getProductsByCategory(@PathVariable long categoryId, @RequestParam int page, @RequestParam int size){
+        return ResponseEntity.ok(productService.listProductsBasedOnCategory(categoryId, page, size));
     }
 
     @DeleteMapping("/deleteProduct/{productId}")
@@ -81,26 +79,26 @@ public class ProductController {
 
     @GetMapping("/sortByPrice/{asc}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
-    public ResponseEntity<?> sortByPrice(@PathVariable boolean asc){
-        return ResponseEntity.ok(productService.sortByPriceAscOrDesc(asc));
+    public ResponseEntity<?> sortByPrice(@PathVariable boolean asc, @RequestParam int page, @RequestParam int size){
+        return ResponseEntity.ok(productService.sortByPriceAscOrDesc(asc, page, size));
     }
 
     @GetMapping("/sortByName/{asc}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
-    public ResponseEntity<?> sortByName(@PathVariable boolean asc){
-        return ResponseEntity.ok(productService.sortByNameAscOrDesc(asc));
+    public ResponseEntity<?> sortByName(@PathVariable boolean asc, @RequestParam int page, @RequestParam int size){
+        return ResponseEntity.ok(productService.sortByNameAscOrDesc(asc, page, size));
     }
 
     @GetMapping("/getInStockProducts")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
-    public ResponseEntity<?> getAvailableProducts(){
-        return ResponseEntity.ok(productService.getAvailableProducts());
+    public ResponseEntity<?> getAvailableProducts(@RequestParam int page, @RequestParam int size){
+        return ResponseEntity.ok(productService.getAvailableProducts(page, size));
     }
 
     @GetMapping("/findByMatchingName/{matchingCase}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
-    public ResponseEntity<?> getProductsByMatchingCase(@PathVariable String matchingCase){
-        return ResponseEntity.ok(productService.findByNameContainingIgnoreCase(matchingCase));
+    public ResponseEntity<?> getProductsByMatchingCase(@PathVariable String matchingCase, @RequestParam int page, @RequestParam int size){
+        return ResponseEntity.ok(productService.findByNameContainingIgnoreCase(matchingCase, page, size));
     }
 
 

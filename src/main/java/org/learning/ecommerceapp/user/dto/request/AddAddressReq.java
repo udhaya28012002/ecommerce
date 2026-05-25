@@ -1,10 +1,19 @@
 package org.learning.ecommerceapp.user.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class AddAddressReq {
 
+    @NotBlank(message = "Street is required")
     private String street;
+
+    @NotBlank(message = "City is required")
     private String city;
+
+    @NotBlank(message = "State is required")
     private String state;
+
+    @NotBlank(message = "Pincode is required")
     private String pincode;
 
     public String getStreet() {

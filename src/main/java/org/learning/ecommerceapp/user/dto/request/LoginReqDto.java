@@ -1,9 +1,16 @@
 package org.learning.ecommerceapp.user.dto.request;
 
+import jakarta.validation.constraints.NotBlank;
+
 public class LoginReqDto {
 
+    @NotBlank(message = "Username is required")
     private String username;
+
+    @NotBlank(message = "Password is required")
     private String password;
+
+    @NotBlank(message = "LoginMethod is required")
     private String loginMethod;
 
     public String getUsername() {

@@ -93,7 +93,7 @@ public class UserService implements UserDetailsService {
     public List<UserResDto> getAllUsers(LoginReqDto loginReq) {
 
         if (!isAdmin(loginReq)) {
-            throw new AccessDeniedException("Admin access required");
+            throw new UserAccessDeniedException("Admin access required");
         }
 
         List<Users> allUsers = userRepo.findAll();

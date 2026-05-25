@@ -2,6 +2,8 @@ package org.learning.ecommerceapp.products.repository;
 
 import org.learning.ecommerceapp.products.dto.ProductRawDto;
 import org.learning.ecommerceapp.products.entity.Products;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -12,7 +14,7 @@ import java.util.List;
 @Repository
 public interface ProductRepository extends JpaRepository<Products, Long> {
 
-    List<Products> findByProductCategoryCategoryId(long categoryId);
+    Page<Products> findByProductCategoryCategoryId(long categoryId, Pageable pageable);
 
     List<Products> findByPriceBetween(double minPrice, double maxPrice);
 
@@ -29,7 +31,7 @@ public interface ProductRepository extends JpaRepository<Products, Long> {
         FROM Products p
         WHERE p.inventory.productQuantity > 0
     """)
-    List<ProductRawDto> findAvailableProducts();
+    Page<ProductRawDto> findAvailableProducts(Pageable pageable);
 
     // SEARCH BY NAME
     @Query("""
@@ -44,5 +46,5 @@ public interface ProductRepository extends JpaRepository<Products, Long> {
         FROM Products p
         WHERE LOWER(p.name) LIKE LOWER(CONCAT('%', :keyword, '%'))
     """)
-    List<ProductRawDto> findByNameContainingIgnoreCase(@Param("keyword") String keyword);
+    Page<ProductRawDto> findByNameContainingIgnoreCase(@Param("keyword") String keyword, Pageable pageable);
 }

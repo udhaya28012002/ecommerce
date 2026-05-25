@@ -14,7 +14,18 @@ public class Inventory {
     @JoinColumn(name = "product_id")
     private Products products;
 
+    @Version
+    private Long version;
+
     private int productQuantity;
+
+    public Long getVersion() {
+        return version;
+    }
+
+    public void setVersion(Long version) {
+        this.version = version;
+    }
 
     public long getInventoryId() {
         return inventoryId;

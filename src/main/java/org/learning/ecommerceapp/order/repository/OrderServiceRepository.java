@@ -1,6 +1,5 @@
 package org.learning.ecommerceapp.order.repository;
 
-import org.hibernate.query.Order;
 import org.learning.ecommerceapp.order.entity.Orders;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.stereotype.Repository;

@@ -6,9 +6,10 @@ import java.util.List;
 
 public class PlaceOrderRequest {
 
+    @NotEmpty(message = "Coupon Code is required")
     private String couponCode;
 
-    @NotEmpty
+    @NotEmpty(message = "OrderItems List is required")
     private List<OrderItemRequestDto> items;
 
     public String getCouponCode() {

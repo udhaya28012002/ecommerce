@@ -1,6 +1,5 @@
 package org.learning.ecommerceapp.discount.dto;
 
-import java.util.HashMap;
 import java.util.Map;
 
 public class DisplayCouponsRes {

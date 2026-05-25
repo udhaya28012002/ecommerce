@@ -1,6 +1,5 @@
 package org.learning.ecommerceapp.cart.controller;
 
-import org.apache.coyote.Response;
 import org.learning.ecommerceapp.cart.dto.request.AddToCartDto;
 import org.learning.ecommerceapp.cart.service.CartService;
 import org.springframework.http.ResponseEntity;

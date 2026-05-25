@@ -1,6 +1,7 @@
 package org.learning.ecommerceapp.products.service;
 
 import jakarta.transaction.Transactional;
+import org.learning.ecommerceapp.products.dto.ProductRawDto;
 import org.learning.ecommerceapp.products.dto.request.ProductReqDto;
 import org.learning.ecommerceapp.products.dto.response.ProductResDto;
 import org.learning.ecommerceapp.inventory.entity.Inventory;
@@ -13,6 +14,11 @@ import org.learning.ecommerceapp.products.exception.NoProductFound;
 import org.learning.ecommerceapp.inventory.repository.InventoryRepository;
 import org.learning.ecommerceapp.category.repository.ProductCategoryRepository;
 import org.learning.ecommerceapp.products.repository.ProductRepository;
+import org.springframework.cache.annotation.CacheEvict;
+import org.springframework.cache.annotation.Cacheable;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 
@@ -31,10 +37,14 @@ public class ProductService {
         this.inventoryRepository = inventoryRepository;
     }
 
-    public List<ProductResDto> showAllProducts() {
-        return structureDto(productRepository.findAll());
+    public Page<ProductResDto> showAllProducts(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
 
+        Page<Products> productPage = productRepository.findAll(pageable);
+
+        return productPage.map(this::convertToDto);
     }
+
 
     public String addProduct(ProductReqDto productReqDto) {
 
@@ -57,13 +67,15 @@ public class ProductService {
         return "Successfully added";
     }
 
-    public List<ProductResDto> listProductsBasedOnCategory(long categoryId) {
+    public Page<ProductResDto> listProductsBasedOnCategory(long categoryId, int page, int size) {
 
         getProductCategory(categoryId);   // validates category exists
 
-        List<Products> productCategoryList =
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<Products> productCategoryList =
                 productRepository
-                        .findByProductCategoryCategoryId(categoryId);
+                        .findByProductCategoryCategoryId(categoryId, pageable);
 
         if (productCategoryList.isEmpty()) {
             throw new NoProductFound(
@@ -71,9 +83,10 @@ public class ProductService {
             );
         }
 
-        return structureDto(productCategoryList);
+        return productCategoryList.map(this::convertToDto);
     }
 
+    @CacheEvict(value = "products", key = "#productId")
     public boolean deleteProductById(long productId) {
         //Need to validate if the user is admin:
 
@@ -85,8 +98,8 @@ public class ProductService {
         return true;
     }
 
+    @Cacheable(value = "products", key = "#productId")
     public ProductResDto getProductById(long productId) {
-
 
         Products product = validateProductPresence(productId);
 
@@ -114,6 +127,7 @@ public class ProductService {
         return product;
     }
 
+    @CacheEvict(value = "products", key = "#productId")
     @Transactional
     public boolean updateProductPrice(long productId, double price) {
         Products product = validateProductPresence(productId);
@@ -125,6 +139,7 @@ public class ProductService {
         return true;
     }
 
+    @CacheEvict(value = "products", key = "#productId")
     @Transactional
     public boolean updateProductName(long productId, String name) {
         Products product = validateProductPresence(productId);
@@ -132,6 +147,7 @@ public class ProductService {
         return true;
     }
 
+    @CacheEvict(value = "products", key = "#productId")
     @Transactional
     public boolean updateProductDescription(long productId, String description) {
         Products product = validateProductPresence(productId);
@@ -139,6 +155,7 @@ public class ProductService {
         return true;
     }
 
+    @CacheEvict(value = "products", key = "#productId")
     @Transactional
     public boolean updateProductCategory(long productId, long categoryId) {
         Products product = validateProductPresence(productId);
@@ -165,67 +182,65 @@ public class ProductService {
         return productResDtoList;
     }
 
-    public List<ProductResDto> sortByPriceAscOrDesc(boolean flag) {
-        return sortByProperty(flag, "price");
+    public Page<ProductResDto> sortByPriceAscOrDesc(boolean flag, int page, int size) {
+        return sortByProperty(flag, "price", page, size);
     }
 
-    /*public List<ProductResDto> sortByPriceDesc(){
-        return sortByProperty(false, "price");
-    }*/
-    public List<ProductResDto> sortByNameAscOrDesc(boolean flag) {
-        return sortByProperty(flag, "name");
+    public Page<ProductResDto> sortByNameAscOrDesc(boolean flag, int page, int size) {
+        return sortByProperty(flag, "name", page, size);
     }
 
-    /*public List<ProductResDto> sortByNameDesc(){
-        return sortByProperty(false, "name");
-    }*/
+    public Page<ProductResDto> getAvailableProducts(int page, int size) {
 
-    public List<ProductResDto> getAvailableProducts() {
-        List<ProductResDto> productResDtoList = productRepository.findAvailableProducts()
-                .stream()
-                .map(productRawDto -> new ProductResDto(
-                        productRawDto.getProductId(),
-                        productRawDto.getName(),
-                        productRawDto.getPrice(),
-                        productRawDto.getShortDescription(),
-                        productRawDto.getProductCategory().getCategoryName(),
-                        mapStatus(productRawDto.getStockQuantity())
-                ))
-                .toList();
+        Pageable pageable = PageRequest.of(page, size);
 
-        if (productResDtoList.isEmpty()) {
+        Page<ProductRawDto> rawProductPage = productRepository.findAvailableProducts(pageable);
+
+        if (rawProductPage.isEmpty()) {
             throw new NoProductFound("No Product found in this price range");
         }
 
-        return productResDtoList;
+        return rawProductPage.map(productRawDto1 -> new ProductResDto(
+                productRawDto1.getProductId(),
+                productRawDto1.getName(),
+                productRawDto1.getPrice(),
+                productRawDto1.getShortDescription(),
+                productRawDto1.getProductCategory().getCategoryName(),
+                mapStatus(productRawDto1.getStockQuantity())
+        ));
     }
 
-    public List<ProductResDto> findByNameContainingIgnoreCase(String keyword) {
-        return productRepository.findByNameContainingIgnoreCase(keyword)
-                .stream()
-                .map(productRawDto -> new ProductResDto(
-                        productRawDto.getProductId(),
-                        productRawDto.getName(),
-                        productRawDto.getPrice(),
-                        productRawDto.getShortDescription(),
-                        productRawDto.getProductCategory().getCategoryName(),
-                        mapStatus(productRawDto.getStockQuantity())
-                ))
-                .toList();
+    public Page<ProductResDto> findByNameContainingIgnoreCase(String keyword, int page, int size) {
+
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<ProductRawDto> productRawDtos = productRepository.findByNameContainingIgnoreCase(keyword, pageable);
+
+        return productRawDtos.map(productRawDto -> new ProductResDto(
+                productRawDto.getProductId(),
+                productRawDto.getName(),
+                productRawDto.getPrice(),
+                productRawDto.getShortDescription(),
+                productRawDto.getProductCategory().getCategoryName(),
+                mapStatus(productRawDto.getStockQuantity())
+        ));
     }
 
-    private List<ProductResDto> sortByProperty(boolean asc, String property) {
+    private Page<ProductResDto> sortByProperty(boolean asc, String property, int page, int size) {
+
 
         Sort sort = asc ? Sort.by(property).ascending()
                 : Sort.by(property).descending();
 
-        List<ProductResDto> productResDtoList = structureDto(productRepository.findAll(sort));
+        Pageable pageable = PageRequest.of(page, size, sort);
 
-        if (productResDtoList.isEmpty()) {
+        Page<Products> products = productRepository.findAll(pageable);
+
+        if (products.isEmpty()) {
             throw new NoProductFound("No products available");
         }
 
-        return productResDtoList;
+        return products.map(this::convertToDto);
     }
 
     private List<ProductResDto> structureDto(List<Products> productList) {
@@ -240,6 +255,16 @@ public class ProductService {
                         mapStatus(product.getInventory().getProductQuantity())
                 ))
                 .toList();
+    }
+
+    private ProductResDto convertToDto(Products product) {
+        return new ProductResDto(
+                product.getProductId(),
+                product.getName(),
+                product.getPrice(),
+                product.getShortDescription(),
+                product.getProductCategory().getCategoryName(),
+                mapStatus(product.getInventory().getProductQuantity()));
     }
 
     private Products validateProductPresence(long productId) {

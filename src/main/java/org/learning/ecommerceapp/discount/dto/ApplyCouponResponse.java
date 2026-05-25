@@ -1,6 +1,20 @@
 package org.learning.ecommerceapp.discount.dto;
 
+import jakarta.validation.constraints.Min;
+import jakarta.validation.constraints.NotBlank;
+
 public class ApplyCouponResponse {
+
+    @NotBlank(message = "Coupon Code is required")
+    private String couponName;
+
+    private boolean isApplied;
+
+    @NotBlank(message = "Reason should be defined")
+    private String message;
+
+    @Min(value = 1, message = "Final Price should be valid")
+    private double finalPrice;
 
     public String getCouponName() {
         return couponName;
@@ -9,14 +23,6 @@ public class ApplyCouponResponse {
     public void setCouponName(String couponName) {
         this.couponName = couponName;
     }
-
-    private String couponName;
-
-    private boolean isApplied;
-
-    private String message;
-
-    private double finalPrice;
 
     public boolean isApplied() {
         return isApplied;

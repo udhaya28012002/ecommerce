@@ -4,6 +4,7 @@ import jakarta.validation.constraints.Min;
 
 public class AddToCartDto {
 
+    @Min(1)
     private long productId;
 
     @Min(1)

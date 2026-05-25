@@ -1,6 +1,7 @@
 package org.learning.ecommerceapp.order.controller;
 
 import org.learning.ecommerceapp.order.dto.request.PlaceOrderRequest;
+import org.learning.ecommerceapp.order.service.OrderRetryService;
 import org.learning.ecommerceapp.order.service.OrderService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
@@ -12,15 +13,17 @@ import org.springframework.web.bind.annotation.*;
 public class OrderController {
 
     private final OrderService orderService;
+    private final OrderRetryService orderRetryService;
 
-    public OrderController(OrderService orderService) {
+    public OrderController(OrderService orderService, OrderRetryService orderRetryService) {
         this.orderService = orderService;
+        this.orderRetryService = orderRetryService;
     }
 
     @PostMapping("/placeOrder")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<?> placeOrder(@RequestBody PlaceOrderRequest placeOrderRequest){
-        return ResponseEntity.status(HttpStatus.CREATED).body(orderService.placeOrder(placeOrderRequest));
+        return ResponseEntity.status(HttpStatus.CREATED).body(orderRetryService.placeOrderRetry(placeOrderRequest));
     }
 
     @GetMapping("/getOrder/{orderNumber}")

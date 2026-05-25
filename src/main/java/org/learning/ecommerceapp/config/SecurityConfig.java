@@ -1,5 +1,7 @@
-package org.learning.ecommerceapp.auth.config;
+package org.learning.ecommerceapp.config;
 
+import org.learning.ecommerceapp.auth.exception.CustomAccessDeniedHandler;
+import org.learning.ecommerceapp.auth.exception.CustomAuthenticationEntryPoint;
 import org.learning.ecommerceapp.auth.filters.JWTAuthFilter;
 import org.learning.ecommerceapp.user.service.UserService;
 import org.springframework.context.annotation.Bean;
@@ -23,9 +25,14 @@ public class SecurityConfig {
 
     private final PasswordEncoder passwordEncoder;
 
-    public SecurityConfig(JWTAuthFilter jwtAuthFilter, PasswordEncoder passwordEncoder) {
+    private final CustomAccessDeniedHandler customAccessDeniedHandler;
+    private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
+
+    public SecurityConfig(JWTAuthFilter jwtAuthFilter, PasswordEncoder passwordEncoder, CustomAccessDeniedHandler customAccessDeniedHandler, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.passwordEncoder = passwordEncoder;
+        this.customAccessDeniedHandler = customAccessDeniedHandler;
+        this.customAuthenticationEntryPoint = customAuthenticationEntryPoint;
     }
 
     @Bean
@@ -35,12 +42,20 @@ public class SecurityConfig {
                 .authorizeHttpRequests(
                         auth ->
                                 auth.requestMatchers(
-                                        "/authenticate",
-                                                "/createUser"
+                                                "/authenticate",
+                                                "/createUser",
+                                                "/v3/api-docs/**",
+                                                "/swagger-ui/**",
+                                                "/swagger-ui.html",
+                                                "/refreshAuth"
                                         )
                                         .permitAll()
                                         //.requestMatchers("/*/listAllProducts").hasRole("CUSTOMER")
                                         .anyRequest().authenticated()
+                )
+                .exceptionHandling(exception ->
+                        exception.authenticationEntryPoint(customAuthenticationEntryPoint)
+                                .accessDeniedHandler(customAccessDeniedHandler)
                 );
 
         httpSecurity.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
@@ -49,7 +64,6 @@ public class SecurityConfig {
 
     @Bean
     public AuthenticationManager authenticationManager(UserService userService, PasswordEncoder passwordEncoder) {
-        System.out.println("This is being used....");
         DaoAuthenticationProvider daoAuthenticationProvider = new DaoAuthenticationProvider(userService);
         daoAuthenticationProvider.setPasswordEncoder(passwordEncoder);
         return new ProviderManager(daoAuthenticationProvider);

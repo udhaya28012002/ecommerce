@@ -1,10 +1,11 @@
 package org.learning.ecommerceapp.order.service;
 
+import jakarta.persistence.EntityManager;
+import jakarta.persistence.PersistenceContext;
 import org.learning.ecommerceapp.cart.entity.Cart;
 import org.learning.ecommerceapp.cart.entity.CartItems;
 import org.learning.ecommerceapp.cart.exception.CartEmptyException;
 import org.learning.ecommerceapp.discount.dto.ApplyCouponResponse;
-import org.learning.ecommerceapp.discount.exception.NoCouponAvailable;
 import org.learning.ecommerceapp.discount.service.DiscountService;
 import org.learning.ecommerceapp.order.dto.request.OrderItemRequestDto;
 import org.learning.ecommerceapp.order.dto.request.PlaceOrderRequest;
@@ -23,7 +24,7 @@ import org.learning.ecommerceapp.products.entity.Products;
 import org.learning.ecommerceapp.products.exception.NoProductFound;
 import org.learning.ecommerceapp.products.service.ProductService;
 import org.learning.ecommerceapp.user.entity.Users;
-import org.learning.ecommerceapp.user.exception.AccessDeniedException;
+import org.learning.ecommerceapp.user.exception.UserAccessDeniedException;
 import org.learning.ecommerceapp.user.repository.UserRepo;
 import org.learning.ecommerceapp.util.CurrentUserService;
 import org.slf4j.Logger;
@@ -45,6 +46,9 @@ public class OrderService {
     private final DiscountService discountService;
 
     private static final int DEFAULT_DISCOUNT = 0;
+
+    @PersistenceContext
+    private EntityManager entityManager;
 
     private final Logger logger = LoggerFactory.getLogger(OrderService.class);
 
@@ -84,7 +88,7 @@ public class OrderService {
             );
 
     @Transactional
-    public OrdersResDto placeOrder(PlaceOrderRequest placeOrderRequest) {
+    public OrdersResDto placeOrder(PlaceOrderRequest placeOrderRequest) throws OrderItemsNotFoundException, ProductOutOfStockException {
 
 
         int discount = 0;
@@ -99,47 +103,41 @@ public class OrderService {
             throw new OrderItemsNotFoundException("Order info is missing");
         }
 
-        System.out.println("This is being invoked");
-
         LocalDateTime today = LocalDateTime.now();
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMddHHmmss");
 
-        // CREATE ORDER FIRST
         Orders order = new Orders();
         order.setOrderDate(today);
         order.setUsers(user);
         order.setOrderNumber("ORD-" + today.format(formatter));
 
-        // CREATE ORDER ITEMS
         List<OrderItems> orderItemsList = buildOrderItems(placeOrderRequest, order, discount, deliveryCharge);
 
-        //Calculate total Price to apply the coupon
         double totalPricePerOrder = orderItemsList.stream()
                 .mapToDouble(OrderItems::getTotalPrice)
                 .sum();
 
-        ApplyCouponResponse applyCouponResponse = checkCouponsAndRedeem(placeOrderRequest.getCouponCode(), totalPricePerOrder);;
+        ApplyCouponResponse applyCouponResponse = checkCouponsAndRedeem(placeOrderRequest.getCouponCode(), totalPricePerOrder);
 
         double finalPrice = applyCouponResponse.getFinalPrice();
         order.setFinalPrice(finalPrice);
 
         order.setAppliedCoupon(applyCouponResponse.getCouponName());
 
-        // LINK ITEMS TO ORDER
         order.setOrderItemsList(orderItemsList);
 
         // PAYMENT PAGE (IF SUCCESS WE NEED TO PLACE ORDER OTHERWISE REVERT),
 
-        // UPDATING STOCKS BECAUSE THE PAYMENT WAS SUCCESSFUL.
         updatingStocks(orderItemsList);
 
-        //SETTING ORDER STATUS
         order.setOrderStatus(OrderStatus.CONFIRMED);
 
-        // SAVE ONLY ORDER (cascade handles items)
         Orders savedOrder = orderServiceRepository.save(order);
 
-        // BUILD RESPONSE
+        if(savedOrder.getOrderStatus().equals(OrderStatus.CONFIRMED)){
+            logger.info("{}'s Order is confirmed : Order ID ({})",loggedUser, savedOrder.getOrderId());
+        }
+
         return buildOrderResDto(savedOrder);
     }
 
@@ -318,7 +316,7 @@ public class OrderService {
         Orders orders = getOrder(orderNumber);
 
         if (!orders.getUsers().getUserName().equals(loggedUser)) {
-            throw new AccessDeniedException("Access Denied");
+            throw new UserAccessDeniedException("Access Denied");
         }
 
         validateOrderStatusUpdate(orders.getOrderStatus(), OrderStatus.CANCELLED);
@@ -407,6 +405,7 @@ public class OrderService {
     }
 
     private void updatingStocks(List<OrderItems> orderItemsList) {
+
         for (OrderItems orderItems : orderItemsList) {
 
             Products products = orderItems.getProduct();
@@ -420,10 +419,13 @@ public class OrderService {
                             orderQuantity
                     )
             );
+
+            entityManager.flush();
         }
+
     }
 
-    private List<OrderItems> buildOrderItems(PlaceOrderRequest placeOrderRequest, Orders order, int discount, double deliveryCharge) {
+    private List<OrderItems> buildOrderItems(PlaceOrderRequest placeOrderRequest, Orders order, int discount, double deliveryCharge) throws ProductOutOfStockException{
         List<OrderItems> orderItemsList = new ArrayList<>();
         for (OrderItemRequestDto dto : placeOrderRequest.getItems()) {
 
@@ -451,7 +453,7 @@ public class OrderService {
         return orderItemsList;
     }
 
-    private void validateIfProductIsAvailableForOrder(int stockQuantity, int buyQuantity) {
+    private void validateIfProductIsAvailableForOrder(int stockQuantity, int buyQuantity) throws ProductOutOfStockException{
         if (stockQuantity <= 0 || buyQuantity > stockQuantity) {
             throw new ProductOutOfStockException("Product is out of stock");
         }

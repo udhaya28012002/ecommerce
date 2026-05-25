@@ -1,5 +1,9 @@
 package org.learning.ecommerceapp.globalException;
 
+import io.jsonwebtoken.ExpiredJwtException;
+import org.hibernate.StaleObjectStateException;
+import org.hibernate.StaleStateException;
+import org.learning.ecommerceapp.auth.exception.InvalidTokenException;
 import org.learning.ecommerceapp.cart.exception.CartEmptyException;
 import org.learning.ecommerceapp.discount.exception.DiscountNotApplicable;
 import org.learning.ecommerceapp.discount.exception.DuplicateDiscountException;
@@ -15,7 +19,9 @@ import org.learning.ecommerceapp.products.exception.NoProductFound;
 import org.learning.ecommerceapp.user.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.orm.ObjectOptimisticLockingFailureException;
 import org.springframework.security.authentication.DisabledException;
+import org.springframework.security.core.AuthenticationException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -25,6 +31,18 @@ import java.util.Map;
 
 @RestControllerAdvice
 public class GlobalExceptionHandler {
+
+    @ExceptionHandler(ExpiredJwtException.class)
+    public ResponseEntity<?> jwtTokenExpired(ExpiredJwtException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(InvalidTokenException.class)
+    public ResponseEntity<?> invalidToken(InvalidTokenException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<?> handleNotFound(ResourceNotFoundException ex) {
@@ -80,8 +98,16 @@ public class GlobalExceptionHandler {
                 .body(ex.getMessage());
     }
 
-    @ExceptionHandler(AccessDeniedException.class)
-    public ResponseEntity<?> handleAccessDenied(AccessDeniedException ex) {
+    @ExceptionHandler(AuthenticationException.class)
+    public ResponseEntity<?> handleAuthenticationException(AuthenticationException ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.UNAUTHORIZED)
+                .body("Authentication failed");
+    }
+
+    @ExceptionHandler(UserAccessDeniedException.class)
+    public ResponseEntity<?> handleAccessDenied(UserAccessDeniedException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
                 .body(ex.getMessage());
     }
@@ -126,6 +152,18 @@ public class GlobalExceptionHandler {
     public ResponseEntity<?> OrderItemsNotFound(OrderItemsNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ex.getMessage());
+    }
+
+    @ExceptionHandler({
+            ObjectOptimisticLockingFailureException.class,
+            StaleObjectStateException.class,
+            StaleStateException.class
+    })
+    public ResponseEntity<?> handleOptimisticLockingException(Exception ex) {
+
+        return ResponseEntity
+                .status(HttpStatus.CONFLICT)
+                .body(ex.getClass());
     }
 
     @ExceptionHandler(ProductOutOfStockException.class)

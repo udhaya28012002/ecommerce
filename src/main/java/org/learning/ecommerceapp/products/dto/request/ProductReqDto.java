@@ -3,21 +3,21 @@ package org.learning.ecommerceapp.products.dto.request;
 import jakarta.validation.constraints.*;
 
 public class ProductReqDto {
-    @NotBlank
-    @Size(min = 3, max = 20)
+    @NotBlank(message = "Product Name is required")
+    @Size(min = 3, max = 20, message = "Product Name should be withing 3 and 20")
     private String name;
 
-    @Positive
+    @Positive(message = "Price should be valid")
     private double price;
 
-    @NotBlank
-    @Size(min = 5, max = 200)
+    @NotBlank(message = "Short Desc is required")
+    @Size(min = 5, max = 200, message = "Value should be within 5 and 200")
     private String shortDescription;
 
-    @NotNull
-    private Long categoryId;
+    @Min(value = 1, message = "Should be a valid No")
+    private long categoryId;
 
-    @PositiveOrZero
+    @Positive(message = "Quantity should be valid")
     private int quantity;
 
     public String getName() {

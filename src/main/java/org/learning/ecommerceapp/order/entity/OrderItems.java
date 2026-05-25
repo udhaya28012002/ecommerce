@@ -2,7 +2,6 @@ package org.learning.ecommerceapp.order.entity;
 
 import jakarta.persistence.*;
 import jakarta.validation.constraints.Min;
-import org.hibernate.query.Order;
 import org.hibernate.validator.constraints.Range;
 import org.learning.ecommerceapp.products.entity.Products;
 

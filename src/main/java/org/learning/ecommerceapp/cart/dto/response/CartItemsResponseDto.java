@@ -1,10 +1,5 @@
 package org.learning.ecommerceapp.cart.dto.response;
 
-import org.learning.ecommerceapp.cart.entity.Cart;
-import org.learning.ecommerceapp.cart.entity.CartItems;
-
-import java.util.List;
-
 public class CartItemsResponseDto {
 
     private Long productId;

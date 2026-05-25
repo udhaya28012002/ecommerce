@@ -1,6 +1,5 @@
 package org.learning.ecommerceapp.user.repository;
 
-
 import org.learning.ecommerceapp.user.entity.Users;
 import org.springframework.data.jpa.repository.JpaRepository;
 

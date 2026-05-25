@@ -1,7 +1,6 @@
 package org.learning.ecommerceapp.order.dto.response;
 
 import jakarta.validation.constraints.Min;
-import jakarta.validation.constraints.NotNull;
 import org.hibernate.validator.constraints.Range;
 
 public class OrderItemsResponseDto {

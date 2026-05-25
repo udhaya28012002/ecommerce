@@ -1,6 +1,5 @@
 package org.learning.ecommerceapp.cart.dto.response;
 
-import java.util.List;
 import java.util.Set;
 
 public class CartResponseDto {

@@ -12,7 +12,7 @@ import org.mockito.Mock;
 import org.mockito.junit.jupiter.MockitoExtension;
 
 @ExtendWith(MockitoExtension.class)
-class CartServiceTest {
+class CartCacheServiceTest {
     @Mock
     ProductService productService;
 
@@ -26,7 +26,7 @@ class CartServiceTest {
     UserService userService;
 
     @InjectMocks
-    CartService cartService;
+    CartCacheService cartCacheService;
 
     @Test
     void addToCart() {
