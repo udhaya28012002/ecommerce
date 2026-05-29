@@ -8,10 +8,7 @@ import org.learning.ecommerceapp.cart.exception.CartEmptyException;
 import org.learning.ecommerceapp.discount.exception.DiscountNotApplicable;
 import org.learning.ecommerceapp.discount.exception.DuplicateDiscountException;
 import org.learning.ecommerceapp.discount.exception.NoCouponAvailable;
-import org.learning.ecommerceapp.order.exception.OrderItemsNotFoundException;
-import org.learning.ecommerceapp.order.exception.OrderNotFoundException;
-import org.learning.ecommerceapp.order.exception.OrderStatusUpdateException;
-import org.learning.ecommerceapp.order.exception.ProductOutOfStockException;
+import org.learning.ecommerceapp.order.exception.*;
 import org.learning.ecommerceapp.category.exception.CategoryAlreadyExistsException;
 import org.learning.ecommerceapp.category.exception.CategoryNotFoundException;
 import org.learning.ecommerceapp.inventory.exception.InvalidInventoryException;
@@ -20,8 +17,10 @@ import org.learning.ecommerceapp.user.exception.*;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.orm.ObjectOptimisticLockingFailureException;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.AuthenticationException;
+import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.web.bind.MethodArgumentNotValidException;
 import org.springframework.web.bind.annotation.ExceptionHandler;
 import org.springframework.web.bind.annotation.RestControllerAdvice;
@@ -38,6 +37,12 @@ public class GlobalExceptionHandler {
                 .body(ex.getMessage());
     }
 
+    @ExceptionHandler(BadCredentialsException.class)
+    public ResponseEntity<?> badCredentials(BadCredentialsException ex) {
+        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ex.getMessage());
+    }
+
     @ExceptionHandler(InvalidTokenException.class)
     public ResponseEntity<?> invalidToken(InvalidTokenException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
@@ -46,6 +51,12 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ResourceNotFoundException.class)
     public ResponseEntity<?> handleNotFound(ResourceNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(UsernameNotFoundException.class)
+    public ResponseEntity<?> userNotFound(UsernameNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
                 .body(ex.getMessage());
     }
@@ -64,19 +75,19 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(DuplicateDiscountException.class)
     public ResponseEntity<?> duplicateDiscountFound(DuplicateDiscountException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
+        return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ex.getMessage());
     }
 
     @ExceptionHandler(DisabledException.class)
     public ResponseEntity<?> disableAccount(DisabledException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ex.getMessage());
     }
 
     @ExceptionHandler(CartEmptyException.class)
     public ResponseEntity<?> cartEmptyException(CartEmptyException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ex.getMessage());
     }
 
@@ -92,9 +103,21 @@ public class GlobalExceptionHandler {
                 .body(ex.getMessage());
     }
 
+    @ExceptionHandler(AddressNotFoundException.class)
+    public ResponseEntity<?> AddressNotFound(AddressNotFoundException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
+                .body(ex.getMessage());
+    }
+
     @ExceptionHandler(InvalidCredentialsException.class)
     public ResponseEntity<?> handleInvalidCredentials(InvalidCredentialsException ex) {
         return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(PasswordReuseException.class)
+    public ResponseEntity<?> passwordReuseException(PasswordReuseException ex) {
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ex.getMessage());
     }
 
@@ -108,7 +131,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(UserAccessDeniedException.class)
     public ResponseEntity<?> handleAccessDenied(UserAccessDeniedException ex) {
-        return ResponseEntity.status(HttpStatus.UNAUTHORIZED)
+        return ResponseEntity.status(HttpStatus.FORBIDDEN)
                 .body(ex.getMessage());
     }
 
@@ -126,7 +149,7 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(InvalidInventoryException.class)
     public ResponseEntity<?> handleInvalidInventory(InvalidInventoryException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
+        return ResponseEntity.status(HttpStatus.BAD_REQUEST)
                 .body(ex.getMessage());
     }
 
@@ -144,13 +167,25 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(OrderStatusUpdateException.class)
     public ResponseEntity<?> OrderStatusUpdateException(OrderStatusUpdateException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_FOUND)
+        return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ex.getMessage());
     }
 
     @ExceptionHandler(OrderItemsNotFoundException.class)
     public ResponseEntity<?> OrderItemsNotFound(OrderItemsNotFoundException ex) {
         return ResponseEntity.status(HttpStatus.NOT_FOUND)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(IllegalStateException.class)
+    public ResponseEntity<?> OrderItemsNotFound(IllegalStateException ex) {
+        return ResponseEntity.status(HttpStatus.INTERNAL_SERVER_ERROR)
+                .body(ex.getMessage());
+    }
+
+    @ExceptionHandler(OrderProcessingException.class)
+    public ResponseEntity<?> OrderItemsNotFound(OrderProcessingException ex) {
+        return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ex.getMessage());
     }
 
@@ -168,13 +203,13 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ProductOutOfStockException.class)
     public ResponseEntity<?> handleProductOutOfStock(ProductOutOfStockException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
+        return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ex.getMessage());
     }
 
     @ExceptionHandler(CategoryAlreadyExistsException.class)
     public ResponseEntity<?> handleCategoryAlreadyExists(CategoryAlreadyExistsException ex) {
-        return ResponseEntity.status(HttpStatus.NOT_ACCEPTABLE)
+        return ResponseEntity.status(HttpStatus.CONFLICT)
                 .body(ex.getMessage());
     }
 

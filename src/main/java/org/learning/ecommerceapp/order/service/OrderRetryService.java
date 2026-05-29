@@ -5,6 +5,7 @@ import org.hibernate.StaleStateException;
 import org.learning.ecommerceapp.order.dto.request.PlaceOrderRequest;
 import org.learning.ecommerceapp.order.dto.response.OrdersResDto;
 import org.learning.ecommerceapp.order.exception.OrderItemsNotFoundException;
+import org.learning.ecommerceapp.order.exception.OrderProcessingException;
 import org.learning.ecommerceapp.order.exception.ProductOutOfStockException;
 import org.learning.ecommerceapp.util.CurrentUserService;
 import org.slf4j.Logger;
@@ -25,36 +26,56 @@ private final CurrentUserService currentUserService;
         this.currentUserService = currentUserService;
     }
 
-    public OrdersResDto placeOrderRetry(PlaceOrderRequest request){
+    public OrdersResDto placeOrderRetry(PlaceOrderRequest request) {
 
         String loggedUser = currentUserService.getLoggedInUser();
 
         int retries = 5;
 
-        while(retries > 0){
+        while (retries > 0) {
 
             try {
 
                 return orderTransactionService.placeOrder(request);
 
-            } catch (ObjectOptimisticLockingFailureException | OptimisticLockException | StaleStateException e){
+            } catch (
+                    ObjectOptimisticLockingFailureException |
+                    OptimisticLockException |
+                    StaleStateException ex
+            ) {
 
-                logger.warn("{} is trying {} time", loggedUser, retries);
                 retries--;
 
-                if(retries == 0){
-                    throw new RuntimeException("Too many concurrent requests");
+                logger.warn(
+                        "Optimistic locking failure for user {}. Retries left: {}",
+                        loggedUser,
+                        retries
+                );
+
+                if (retries == 0) {
+                    throw new OrderProcessingException(
+                            "Too many concurrent requests. Please try again"
+                    );
                 }
 
                 try {
                     Thread.sleep(100);
-                } catch (InterruptedException ex) {
+                } catch (InterruptedException interruptedException) {
                     Thread.currentThread().interrupt();
+
+                    throw new OrderProcessingException(
+                            "Order processing interrupted"
+                    );
                 }
-            } catch (ProductOutOfStockException | OrderItemsNotFoundException ex){
+
+            } catch (
+                    ProductOutOfStockException |
+                    OrderItemsNotFoundException ex
+            ) {
                 throw ex;
             }
         }
+
         throw new IllegalStateException("Unexpected execution path");
     }
 }

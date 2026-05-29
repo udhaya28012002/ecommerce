@@ -8,7 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/products")
+@RequestMapping("/api/products")
 public class ProductController {
 
     private final ProductService productService;
@@ -25,13 +25,13 @@ public class ProductController {
 
     @GetMapping("/listAllProducts")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
-    public ResponseEntity<?> getAllProducts(@RequestParam int page, @RequestParam int size){
+    public ResponseEntity<?> getAllProducts(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
         return ResponseEntity.ok(productService.showAllProducts(page, size));
     }
 
     @GetMapping("/listProductByCategory/{categoryId}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
-    public ResponseEntity<?> getProductsByCategory(@PathVariable long categoryId, @RequestParam int page, @RequestParam int size){
+    public ResponseEntity<?> getProductsByCategory(@PathVariable long categoryId, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
         return ResponseEntity.ok(productService.listProductsBasedOnCategory(categoryId, page, size));
     }
 
@@ -73,31 +73,31 @@ public class ProductController {
 
     @GetMapping("/filterProducts")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
-    public ResponseEntity<?> filterProducts(@RequestParam  int minPrice, @RequestParam int maxPrice){
-        return ResponseEntity.ok(productService.filterByPrice(minPrice, maxPrice));
+    public ResponseEntity<?> filterProducts(@RequestParam  int minPrice, @RequestParam int maxPrice, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
+        return ResponseEntity.ok(productService.filterByPrice(minPrice, maxPrice, page, size));
     }
 
     @GetMapping("/sortByPrice/{asc}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
-    public ResponseEntity<?> sortByPrice(@PathVariable boolean asc, @RequestParam int page, @RequestParam int size){
+    public ResponseEntity<?> sortByPrice(@PathVariable boolean asc, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
         return ResponseEntity.ok(productService.sortByPriceAscOrDesc(asc, page, size));
     }
 
     @GetMapping("/sortByName/{asc}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
-    public ResponseEntity<?> sortByName(@PathVariable boolean asc, @RequestParam int page, @RequestParam int size){
+    public ResponseEntity<?> sortByName(@PathVariable boolean asc,@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
         return ResponseEntity.ok(productService.sortByNameAscOrDesc(asc, page, size));
     }
 
     @GetMapping("/getInStockProducts")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
-    public ResponseEntity<?> getAvailableProducts(@RequestParam int page, @RequestParam int size){
+    public ResponseEntity<?> getAvailableProducts(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
         return ResponseEntity.ok(productService.getAvailableProducts(page, size));
     }
 
     @GetMapping("/findByMatchingName/{matchingCase}")
     @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
-    public ResponseEntity<?> getProductsByMatchingCase(@PathVariable String matchingCase, @RequestParam int page, @RequestParam int size){
+    public ResponseEntity<?> getProductsByMatchingCase(@PathVariable String matchingCase, @RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
         return ResponseEntity.ok(productService.findByNameContainingIgnoreCase(matchingCase, page, size));
     }
 

@@ -19,8 +19,6 @@ public class CurrentUserService {
             throw new IllegalArgumentException("User is not authenticated");
         }
 
-        System.out.println("Authorization : " + authentication.getAuthorities().stream().toList());
-
         return authentication.getName();
     }
 

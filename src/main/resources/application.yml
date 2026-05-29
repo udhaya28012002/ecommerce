@@ -19,7 +19,7 @@ spring:
         format_sql: false
 
 jwt:
-  access-token-expiration: 600000
+  access-token-expiration: 300000
   refresh-token-expiration: 10
   #secret: ${JWT_SECRET}
   secret: 8f3c9a1d7b6e4c2f9a1d7c5e8b3f6a91K9xP2mQ8zR7sT1nU5bY3cD6eF9gH0jL4

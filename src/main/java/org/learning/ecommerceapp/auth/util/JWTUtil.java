@@ -3,8 +3,6 @@ package org.learning.ecommerceapp.auth.util;
 import io.jsonwebtoken.Claims;
 import io.jsonwebtoken.Jwts;
 import io.jsonwebtoken.security.Keys;
-import io.jsonwebtoken.security.PublicJwk;
-import jakarta.annotation.PostConstruct;
 import org.learning.ecommerceapp.config.TokenProperties;
 import org.learning.ecommerceapp.user.enums.Role;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -26,10 +24,11 @@ public class JWTUtil {
         this.key = Keys.hmacShaKeyFor(tokenProperties.getSecret().getBytes(StandardCharsets.UTF_8));
     }
 
-    public String generateJWTToken(String username) {
+    public String generateJWTToken(String username, String role) {
 
         return Jwts.builder()
                 .subject(username)
+                .claim("role", role)
                 .issuedAt(new Date())
                 .expiration(new Date(System.currentTimeMillis() + tokenProperties.getAccessTokenExpiration()))
                 .signWith(key, Jwts.SIG.HS256)

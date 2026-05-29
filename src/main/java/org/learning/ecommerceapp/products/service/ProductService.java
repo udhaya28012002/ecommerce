@@ -164,7 +164,7 @@ public class ProductService {
         return true;
     }
 
-    public List<ProductResDto> filterByPrice(double minPrice, double maxPrice) {
+    public Page<ProductResDto> filterByPrice(double minPrice, double maxPrice, int page, int size) {
         if (minPrice <= 0 || maxPrice <= 0) {
             throw new InvalidInventoryException("Price must be greater than 0");
         }
@@ -173,13 +173,15 @@ public class ProductService {
             throw new InvalidInventoryException("minPrice cannot be greater than maxPrice");
         }
 
-        List<ProductResDto> productResDtoList = structureDto(productRepository.findByPriceBetween(minPrice, maxPrice));
+        Pageable pageable = PageRequest.of(page, size);
+
+        Page<Products> productResDtoList = productRepository.findByPriceBetween(minPrice, maxPrice, pageable);
 
         if (productResDtoList.isEmpty()) {
             throw new NoProductFound("No Product found in this price range");
         }
 
-        return productResDtoList;
+        return productResDtoList.map((this::convertToDto));
     }
 
     public Page<ProductResDto> sortByPriceAscOrDesc(boolean flag, int page, int size) {

@@ -62,13 +62,21 @@ public class CartCacheService {
 
         CartItems existingCartItems = cartItemRepository.findByCartAndProducts(cart, product);
 
-        int totalRequestedQuantity = quantity;
+        /*int totalRequestedQuantity = quantity;
 
         if (existingCartItems != null) {
             totalRequestedQuantity = existingCartItems.getQuantity() + quantity;
+        }*/
+
+        if (existingCartItems != null) {
+
+            int availableQuantity = existingCartItems.getProducts().getInventory().getProductQuantity();
+            if ((existingCartItems.getQuantity() + quantity) > availableQuantity) {
+                throw new InvalidInventoryException("Insufficient stock for the requested quantity");
+            }
         }
 
-        validateStockAvailability(product.getInventory().getProductQuantity(), totalRequestedQuantity);
+        validateStockAvailability(product.getInventory().getProductQuantity(), quantity);
 
         if (existingCartItems == null) {
 
@@ -106,7 +114,7 @@ public class CartCacheService {
             throw new CartEmptyException("No Product Found to Remove from Cart");
         }
 
-        return cartItemRepository.deleteByCartAndProducts_ProductId(cart, productId);
+        return cartItemRepository.deleteByCartAndProducts_ProductId(cart, productId).getCartItemsId() == 0;
     }
 
     @Transactional
@@ -138,7 +146,7 @@ public class CartCacheService {
         int availableQuantity = cartItem.getProducts().getInventory().getProductQuantity();
 
         if (updatedQuantity > availableQuantity) {
-            throw new InvalidInventoryException("Requested quantity exceeds available inventory");
+            throw new InvalidInventoryException("Insufficient stock for the requested quantity");
         }
 
         if (updatedQuantity < 0) {

@@ -5,6 +5,8 @@ import jakarta.persistence.*;
 import java.time.Instant;
 import java.time.LocalDate;
 
+import org.learning.ecommerceapp.user.enums.Role;
+
 @Entity
 @Table(name = "refresh_tokens")
 public class RefreshToken {
@@ -32,6 +34,16 @@ public class RefreshToken {
     private String ipAddress;
 
     private String username;
+
+    private String role;
+
+    public String getRole() {
+        return role;
+    }
+
+    public void setRole(String role) {
+        this.role = role;
+    }
 
     public String getToken() {
         return token;

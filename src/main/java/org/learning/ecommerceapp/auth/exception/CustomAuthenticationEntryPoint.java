@@ -14,15 +14,15 @@ public class CustomAuthenticationEntryPoint implements AuthenticationEntryPoint 
     @Override
     public void commence(HttpServletRequest request, HttpServletResponse response, AuthenticationException authException) throws IOException {
 
-        response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
+       /* response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
         response.setContentType("application/json");
 
         response.getWriter().write("""
-        {
-            "status": 401,
-            "error": "Unauthorized",
-            "message": "Invalid or missing JWT token"
-        }
-        """);
+                {
+                    "status": 401,
+                    "error": "Unauthorized",
+                    "message": "Invalid or missing JWT token"
+                }
+                """);*/
     }
 }

@@ -8,7 +8,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/coupon")
+@RequestMapping("/api/coupon")
 public class DiscountController {
 
     private final DiscountService discountService;

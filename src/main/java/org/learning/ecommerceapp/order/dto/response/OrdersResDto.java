@@ -4,6 +4,7 @@ import jakarta.validation.constraints.NotBlank;
 import jakarta.validation.constraints.NotNull;
 import org.learning.ecommerceapp.order.entity.OrderStatus;
 
+import java.time.LocalDateTime;
 import java.util.List;
 
 public class OrdersResDto {
@@ -16,6 +17,20 @@ public class OrdersResDto {
 
     private List<OrderItemsResponseDto> orderItemsResponse;
 
+    private String appliedCoupon;
+
+    private double finalPrice;
+
+    private LocalDateTime orderDate;
+
+    public LocalDateTime getOrderDate() {
+        return orderDate;
+    }
+
+    public void setOrderDate(LocalDateTime orderDate) {
+        this.orderDate = orderDate;
+    }
+
     public String getAppliedCoupon() {
         return appliedCoupon;
     }
@@ -23,9 +38,6 @@ public class OrdersResDto {
     public void setAppliedCoupon(String appliedCoupon) {
         this.appliedCoupon = appliedCoupon;
     }
-
-    private String appliedCoupon;
-    private double finalPrice;
 
 
     public double getFinalPrice() {

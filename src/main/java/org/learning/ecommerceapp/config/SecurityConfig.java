@@ -9,6 +9,7 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
+import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -28,7 +29,9 @@ public class SecurityConfig {
     private final CustomAccessDeniedHandler customAccessDeniedHandler;
     private final CustomAuthenticationEntryPoint customAuthenticationEntryPoint;
 
-    public SecurityConfig(JWTAuthFilter jwtAuthFilter, PasswordEncoder passwordEncoder, CustomAccessDeniedHandler customAccessDeniedHandler, CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
+    public SecurityConfig(JWTAuthFilter jwtAuthFilter, PasswordEncoder passwordEncoder,
+            CustomAccessDeniedHandler customAccessDeniedHandler,
+            CustomAuthenticationEntryPoint customAuthenticationEntryPoint) {
         this.jwtAuthFilter = jwtAuthFilter;
         this.passwordEncoder = passwordEncoder;
         this.customAccessDeniedHandler = customAccessDeniedHandler;
@@ -38,25 +41,23 @@ public class SecurityConfig {
     @Bean
     public SecurityFilterChain filterChain(HttpSecurity httpSecurity) {
         httpSecurity
-                .csrf(csrf -> csrf.disable()) // This needs to be disabled for Web pages. This is only for Rest API.
+                .csrf(csrf -> csrf.disable())
                 .authorizeHttpRequests(
-                        auth ->
-                                auth.requestMatchers(
-                                                "/authenticate",
-                                                "/createUser",
-                                                "/v3/api-docs/**",
-                                                "/swagger-ui/**",
-                                                "/swagger-ui.html",
-                                                "/refreshAuth"
-                                        )
-                                        .permitAll()
-                                        //.requestMatchers("/*/listAllProducts").hasRole("CUSTOMER")
-                                        .anyRequest().authenticated()
-                )
-                .exceptionHandling(exception ->
-                        exception.authenticationEntryPoint(customAuthenticationEntryPoint)
-                                .accessDeniedHandler(customAccessDeniedHandler)
-                );
+                        auth -> auth.requestMatchers(
+                                "/",
+                                "/index.html",
+                                "/cart.html",
+                                "/orders.html",
+                                "/products.html",
+                                "/profile.html",
+                                "/css/**",
+                                "/js/**",
+                                "/api/authenticate",
+                                "/api/createUser",
+                                "/api/refreshAuth").permitAll()
+                                .anyRequest().authenticated())
+                .exceptionHandling(exception -> exception.authenticationEntryPoint(customAuthenticationEntryPoint)
+                        .accessDeniedHandler(customAccessDeniedHandler));
 
         httpSecurity.addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return httpSecurity.build();

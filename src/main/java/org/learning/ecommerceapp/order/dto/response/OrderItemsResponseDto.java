@@ -8,6 +8,8 @@ public class OrderItemsResponseDto {
     @Min(1)
     private int quantity;
 
+    private String productName;
+
     private double sellingPrice;
 
     @Range(min = 0, max = 70)
@@ -15,11 +17,20 @@ public class OrderItemsResponseDto {
 
     private double totalPrice;
 
-    public OrderItemsResponseDto(int quantity, double sellingPrice, int discount, double totalPrice) {
+    public OrderItemsResponseDto(int quantity, double sellingPrice, int discount, double totalPrice, String productName) {
         this.quantity = quantity;
         this.sellingPrice = sellingPrice;
         this.discount = discount;
         this.totalPrice = totalPrice;
+        this.productName = productName;
+    }
+
+    public String getProductName() {
+        return productName;
+    }
+
+    public void setProductName(String productName) {
+        this.productName = productName;
     }
 
     public int getQuantity() {

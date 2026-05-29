@@ -9,7 +9,7 @@ import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
-@RequestMapping("/orders")
+@RequestMapping("/api/orders")
 public class OrderController {
 
     private final OrderService orderService;
@@ -32,9 +32,9 @@ public class OrderController {
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.getOrderByOrderNumber(orderNumber));
     }
 
-    @GetMapping("/getOrders/username")
+    @GetMapping("/getOrders")
     @PreAuthorize("hasRole('CUSTOMER')")
-    public ResponseEntity<?> getOrdersByUsername(){
+    public ResponseEntity<?> getOrders(){
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.getUserOrdersByUserName());
     }
 

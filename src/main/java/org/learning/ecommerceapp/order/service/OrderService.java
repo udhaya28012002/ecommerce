@@ -388,14 +388,15 @@ public class OrderService {
         OrdersResDto ordersResDto = new OrdersResDto();
         ordersResDto.setOrderNumber(savedOrder.getOrderNumber());
         ordersResDto.setOrderStatus(savedOrder.getOrderStatus());
-
+        ordersResDto.setOrderDate(savedOrder.getOrderDate().withNano(0));
         ordersResDto.setOrderItemsResponse(
                 savedOrder.getOrderItemsList().stream()
                         .map(item -> new OrderItemsResponseDto(
                                 item.getQuantity(),
                                 item.getSellingPrice(),
                                 item.getDiscount(),
-                                item.getTotalPrice()
+                                item.getTotalPrice(),
+                                item.getProduct().getName()
                         ))
                         .toList()
         );

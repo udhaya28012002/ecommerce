@@ -3,6 +3,7 @@ package org.learning.ecommerceapp.auth.controller;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import org.learning.ecommerceapp.auth.dto.AuthResDto;
+import org.learning.ecommerceapp.auth.dto.RefreshTokenInput;
 import org.learning.ecommerceapp.auth.refreshtoken.service.RefreshTokenService;
 import org.learning.ecommerceapp.user.dto.request.LoginReqDto;
 import org.learning.ecommerceapp.auth.util.JWTUtil;
@@ -15,12 +16,10 @@ import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.Authentication;
 import org.springframework.security.core.userdetails.UserDetails;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestBody;
-import org.springframework.web.bind.annotation.RequestParam;
-import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.*;
 
 @RestController
+@RequestMapping("/api")
 public class AuthController {
 
     private final RegistrationService registrationService;
@@ -53,9 +52,11 @@ public class AuthController {
             String header = request.getHeader("User-Agent");
             String ipAddress = request.getRemoteAddr();
 
+            System.out.println("Authorities :  " + userDetails.getAuthorities());;
+
             if (userDetails != null) {
-                accessToken = jwtUtil.generateJWTToken(userDetails.getUsername());
-                refreshToken = refreshTokenService.createRefreshToken(header, ipAddress, userDetails.getUsername());
+                accessToken = jwtUtil.generateJWTToken(userDetails.getUsername(), userDetails.getAuthorities().toString());
+                refreshToken = refreshTokenService.createRefreshToken(header, ipAddress, userDetails.getUsername(), userDetails.getAuthorities().toString());
             }
 
             AuthResDto authResDto = new AuthResDto();
@@ -91,8 +92,8 @@ public class AuthController {
             UserDetails userDetails = (UserDetails) authentication.getPrincipal();
 
             if (userDetails != null) {
-                accessToken = jwtUtil.generateJWTToken(userDetails.getUsername());
-                refreshToken = refreshTokenService.createRefreshToken(header, ipAddress, userDetails.getUsername());
+                accessToken = jwtUtil.generateJWTToken(userDetails.getUsername(), userDetails.getAuthorities().toString());
+                refreshToken = refreshTokenService.createRefreshToken(header, ipAddress, userDetails.getUsername(), userDetails.getAuthorities().toString());
             }
 
             AuthResDto authResDto = new AuthResDto();
@@ -108,13 +109,13 @@ public class AuthController {
     }
 
     @PostMapping("/refreshAuth")
-    public ResponseEntity<String> refreshAuth(@RequestParam String refreshToken){
-        return ResponseEntity.status(HttpStatus.CREATED).body(refreshTokenService.refreshToken(refreshToken));
+    public ResponseEntity<String> refreshAuth(@RequestBody RefreshTokenInput refreshToken){
+        return ResponseEntity.status(HttpStatus.CREATED).body(refreshTokenService.refreshToken(refreshToken.getRefreshToken()));
     }
 
     @PostMapping("/deleteRefreshAuth")
-    public void deleteRefreshAuth(@RequestParam String refreshToken){
-        refreshTokenService.removeTokens(refreshToken);
+    public void deleteRefreshAuth(@RequestBody RefreshTokenInput refreshToken){
+        refreshTokenService.removeTokens(refreshToken.getRefreshToken());
     }
 
 }

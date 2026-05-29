@@ -50,7 +50,7 @@ public class DiscountService {
         }
 
         if (userDiscountRepo.existsByUsersAndCouponCode(user, NEW_USER_COUPON)) {
-            throw new DuplicateDiscountException("Gift Coupon has been already added");
+            throw new DuplicateDiscountException("Discount already exists for this product");
         }
 
         DiscountOnUsers discountOnUsers = createDiscount(user, NEW_USER_COUPON, "Welcome Gift", DiscountType.FLAT, NEW_USER_COUPON_VALUE, 200, 100, 1, LocalDate.now().plusMonths(6));
@@ -170,7 +170,7 @@ public class DiscountService {
         Users user = userService.findByUsername_ForInternal(loggedUser);
 
         if (user.getDiscountOnUsers().isEmpty()) {
-            throw new NoCouponAvailable("No Coupons are available");
+            throw new NoCouponAvailable("No applicable coupon available");
         }
 
         return buildCouponDetailsRes(user.getDiscountOnUsers());

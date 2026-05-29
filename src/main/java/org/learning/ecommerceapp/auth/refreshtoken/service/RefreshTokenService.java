@@ -5,6 +5,7 @@ import org.learning.ecommerceapp.auth.exception.InvalidTokenException;
 import org.learning.ecommerceapp.auth.refreshtoken.entity.RefreshToken;
 import org.learning.ecommerceapp.auth.refreshtoken.repository.RefreshTokenRepo;
 import org.learning.ecommerceapp.auth.util.JWTUtil;
+import org.learning.ecommerceapp.user.enums.Role;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
@@ -29,7 +30,7 @@ public class RefreshTokenService {
         return refreshTokenRepo.existsById(token);
     }
 
-    public String createRefreshToken(String header, String ipAddr, String username){
+    public String createRefreshToken(String header, String ipAddr, String username, String role){
 
         String generatedToken = UUID.randomUUID().toString();
 
@@ -42,6 +43,7 @@ public class RefreshTokenService {
         refreshToken.setDeviceInfo(header);
         refreshToken.setIpAddress(ipAddr);
         refreshToken.setUsername(username);
+        refreshToken.setRole(role);
 
         refreshTokenRepo.save(refreshToken);
 
@@ -60,7 +62,9 @@ public class RefreshTokenService {
             throw new InvalidTokenException("Token is expired");
         }
 
-        return jwtUtil.generateJWTToken(token.getUsername());
+        String newToken = jwtUtil.generateJWTToken(token.getUsername(), token.getRole());
+        System.out.println(newToken);
+        return newToken;
     }
 
     @Transactional

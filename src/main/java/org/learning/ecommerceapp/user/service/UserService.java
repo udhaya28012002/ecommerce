@@ -58,7 +58,7 @@ public class UserService implements UserDetailsService {
         Role role = isAdmin ? Role.ROLE_ADMIN : Role.ROLE_CUSTOMER;
 
         if (isPasswordMismatch(dto.getPassword(), dto.getConfirmPassword())) {
-            throw new PasswordMismatchException("Password and Confirm Password do not match");
+            throw new PasswordMismatchException("Password and Confirm Password must match");
         }
 
         if (isUsernameAvailable(dto.getUserName()) || isEmailIdAlreadyRegistered(dto.getEmailId()) || isContactNoIsAlreadyRegistered(dto.getContactNo())) {
@@ -68,7 +68,7 @@ public class UserService implements UserDetailsService {
         ArrayList<Address> addresses = new ArrayList<>();
 
         if (dto.getAddress() == null) {
-            throw new IllegalArgumentException("Address cannot be null");
+            throw new AddressNotFoundException("Address cannot be null");
         }
 
         Address address = dto.getAddress();
@@ -219,7 +219,7 @@ public class UserService implements UserDetailsService {
                 changePasswordRequest.getNewPassword(),
                 user.getPassword())) {
 
-            throw new IllegalArgumentException(
+            throw new PasswordReuseException(
                     "New password cannot be same as old password"
             );
         }
