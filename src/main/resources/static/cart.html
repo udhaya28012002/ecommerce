@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Cart - Ecommerce Tester</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/products.html">Products</a>
+    <a href="/cart.html">Cart</a>
+    <a href="/orders.html">Orders</a>
+    <a href="/profile.html">Profile</a>
+    <a href="#" id="logout-link">Logout</a>
+  </nav>
+
+  <main class="container">
+    <h1>Your Cart</h1>
+
+    <section id="messages"></section>
+
+    <section>
+      <table id="cart-table">
+        <thead>
+          <tr>
+            <th>Product</th>
+            <th>Quantity</th>
+            <th>Price</th>
+            <th>Subtotal</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <div style="margin-top:12px;">
+        <button id="clear-all" class="btn">Clear All</button>
+      </div>
+    </section>
+
+    <section style="margin-top:18px;display:flex;gap:24px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:260px;">
+        <h3>Place Order</h3>
+        <div class="form-group">
+          <label for="coupon-code">Coupon Code (optional)</label>
+          <input id="coupon-code" type="text" />
+        </div>
+        <div class="form-actions">
+          <button id="place-order" class="btn">Place Order</button>
+        </div>
+        <div id="order-result" aria-live="polite"></div>
+      </div>
+
+      <div style="width:320px;">
+        <h3>Summary</h3>
+        <table>
+          <tbody>
+            <tr><td>Total Price</td><td id="summary-total">-</td></tr>
+            <tr><td>Discount</td><td id="summary-discount">-</td></tr>
+            <tr><td>Delivery Charge</td><td id="summary-delivery">-</td></tr>
+            <tr><th>Final Price</th><th id="summary-final">-</th></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/guard.js"></script>
+  <script src="/js/cart.js"></script>
+  <script>
+    // Enforce auth guard
+    guard();
+
+    // Wire logout link
+    document.getElementById('logout-link').addEventListener('click', async (e) => {
+      e.preventDefault();
+      const refreshToken = localStorage.getItem('refreshToken');
+      try {
+        if (refreshToken) {
+          await request('POST', '/api/deleteRefreshAuth', { refreshToken });
+        }
+      } catch (err) {
+        //console.error('Logout error', err);
+      } finally {
+        localStorage.clear();
+        window.location.href = '/index.html';
+      }
+    });
+  </script>
+</body>
+</html>

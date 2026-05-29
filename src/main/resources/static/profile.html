@@ -1,0 +1,83 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Profile - Ecommerce Tester</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/products.html">Products</a>
+    <a href="/cart.html">Cart</a>
+    <a href="/orders.html">Orders</a>
+    <a href="/profile.html">Profile</a>
+    <a href="#" id="logout-link">Logout</a>
+  </nav>
+
+  <main class="container">
+    <h1>Profile</h1>
+
+    <section id="messages"></section>
+
+    <section id="profile-details">
+      <h3>Account Details</h3>
+      <div id="account-fields"></div>
+    </section>
+
+    <section style="margin-top:18px;display:flex;gap:24px;flex-wrap:wrap;">
+      <div style="flex:1;min-width:320px;">
+        <h3>Change Password</h3>
+        <form id="password-form">
+          <div class="form-group"><label>Old Password</label><input id="old-password" type="password" required /></div>
+          <div class="form-group"><label>New Password</label><input id="new-password" type="password" required /></div>
+          <div class="form-group"><label>Confirm Password</label><input id="confirm-password" type="password" required /></div>
+          <div class="form-actions"><button class="btn" type="submit">Change Password</button></div>
+        </form>
+      </div>
+
+      <div style="flex:1;min-width:320px;">
+        <h3>Update Contact</h3>
+        <div class="form-group"><label>Contact No</label><input id="contact-input" type="text" /></div>
+        <div class="form-actions"><button id="update-contact" class="btn">Update Contact</button></div>
+
+        <h3 style="margin-top:16px">Add Address</h3>
+        <form id="address-form">
+          <div class="form-group"><label>Street</label><input id="addr-street" type="text" required /></div>
+          <div class="form-group"><label>City</label><input id="addr-city" type="text" required /></div>
+          <div class="form-group"><label>State</label><input id="addr-state" type="text" required /></div>
+          <div class="form-group"><label>Pincode</label><input id="addr-pincode" type="text" required /></div>
+          <div class="form-actions"><button class="btn" type="submit">Add Address</button></div>
+        </form>
+
+        <h3 style="margin-top:16px">Danger Zone</h3>
+        <div><button id="delete-account" class="btn">Delete Account</button></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/guard.js"></script>
+  <script src="/js/profile.js"></script>
+  <script>
+    guard();
+
+    // Wire logout link
+    document.getElementById('logout-link').addEventListener('click', async (e) => {
+      e.preventDefault();
+      const refreshToken = localStorage.getItem('refreshToken');
+      try {
+        if (refreshToken) {
+          await request('POST', '/api/deleteRefreshAuth', { refreshToken });
+        }
+      } catch (err) {
+        //console.error('Logout error', err);
+      } finally {
+        localStorage.clear();
+        window.location.href = '/index.html';
+      }
+    });
+  </script>
+</body>
+</html>

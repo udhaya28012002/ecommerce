@@ -1,0 +1,127 @@
+/* Simple clean stylesheet for tester UI */
+
+:root {
+  --bg: #ffffff;
+  --text: #111111;
+  --muted: #555555;
+  --accent: #050f0f7c;
+  --error: #c0392b;
+  --success: #27ae60;
+}
+
+html, body {
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--bg);
+  color: var(--text);
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+}
+
+.container {
+  max-width: 900px;
+  margin: 24px auto;
+  padding: 16px;
+}
+
+.navbar {
+  display: flex;
+  gap: 16px;
+  padding: 12px 24px;
+  border-bottom: 1px solid #e6e6e6;
+  align-items: center;
+}
+
+.navbar a {
+  color: var(--text);
+  text-decoration: none;
+  font-weight: 600;
+}
+
+h1 {
+  margin-top: 0;
+}
+
+.tabs {
+  display: flex;
+  gap: 8px;
+  margin-bottom: 12px;
+}
+
+.tab {
+  padding: 8px 12px;
+  background: transparent;
+  border: 1px solid #e6e6e6;
+  cursor: pointer;
+}
+
+.tab.active {
+  background: #f5f5f5;
+  border-color: #dcdcdc;
+}
+
+.tab-section.hidden { display: none; }
+
+.form-group {
+  margin-bottom: 12px;
+}
+
+label {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 14px;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+textarea,
+select {
+  width: 100%;
+  padding: 8px 10px;
+  border: 1px solid #dcdcdc;
+  box-sizing: border-box;
+}
+
+.fieldset, .address-fieldset {
+  border: 1px solid #eaeaea;
+  padding: 8px 12px;
+  margin-bottom: 12px;
+}
+
+.form-actions { margin-top: 8px; }
+
+.btn {
+  background: var(--accent);
+  color: #fff;
+  padding: 8px 12px;
+  border: none;
+  cursor: pointer;
+}
+
+.btn:disabled { opacity: 0.6; cursor: default; }
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+td, th {
+  border: 1px solid #e6e6e6;
+  padding: 8px;
+  text-align: left;
+}
+
+tr:nth-child(even) { background: #fafafa; }
+
+.error-message {
+  color: var(--error);
+  margin-bottom: 8px;
+}
+
+.success-message {
+  color: var(--success);
+  margin-bottom: 8px;
+}
+
+small.muted { color: var(--muted); }

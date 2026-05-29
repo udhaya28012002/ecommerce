@@ -1,0 +1,112 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Products - Ecommerce Tester</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/products.html">Products</a>
+    <a href="/cart.html">Cart</a>
+    <a href="/orders.html">Orders</a>
+    <a href="/profile.html">Profile</a>
+    <a href="#" id="logout-link">Logout</a>
+  </nav>
+
+  <main class="container">
+    <h1>Products</h1>
+
+    <section class="controls">
+      <div style="display:flex;gap:12px;flex-wrap:wrap;align-items:end">
+        <div>
+          <label>Search by name</label>
+          <input id="search-name" type="text" placeholder="Search..." />
+        </div>
+        <div>
+          <label>Category ID</label>
+          <input id="filter-category" type="number" placeholder="Category ID" />
+        </div>
+        <div>
+          <label>Min Price</label>
+          <input id="min-price" type="number" placeholder="Min" />
+        </div>
+        <div>
+          <label>Max Price</label>
+          <input id="max-price" type="number" placeholder="Max" />
+        </div>
+        <div style="display:flex;gap:6px;align-items:center">
+          <div>
+            <label>In-stock only</label>
+            <input id="in-stock-only" type="checkbox" />
+          </div>
+        </div>
+
+        <div style="display:flex;gap:6px;align-items:center">
+          <label>Sort:</label>
+          <button id="sort-price-asc" class="btn">Price ▲</button>
+          <button id="sort-price-desc" class="btn">Price ▼</button>
+          <button id="sort-name-asc" class="btn">Name ▲</button>
+          <button id="sort-name-desc" class="btn">Name ▼</button>
+        </div>
+
+        <div>
+          <button id="apply-filters" class="btn">Apply</button>
+          <button id="clear-filters" class="btn">Clear</button>
+        </div>
+      </div>
+    </section>
+
+    <section id="messages"></section>
+
+    <section>
+      <table id="products-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Price</th>
+            <th>Description</th>
+            <th>Stock</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody></tbody>
+      </table>
+
+      <div style="display:flex;justify-content:space-between;margin-top:12px;align-items:center">
+        <div>
+          <button id="prev-page" class="btn">Previous</button>
+          <button id="next-page" class="btn">Next</button>
+        </div>
+        <div>Page: <span id="page-num">1</span></div>
+      </div>
+    </section>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script src="/js/guard.js"></script>
+  <script src="/js/products.js"></script>
+  <script>
+    // Enforce guard on page load (redirect if not authenticated)
+    guard();
+
+    // Wire logout link
+    document.getElementById('logout-link').addEventListener('click', async (e) => {
+      e.preventDefault();
+      const refreshToken = localStorage.getItem('refreshToken');
+      try {
+        if (refreshToken) {
+          await request('POST', '/api/deleteRefreshAuth', { refreshToken });
+        }
+      } catch (err) {
+        //console.error('Logout error', err);
+      } finally {
+        localStorage.clear();
+        window.location.href = '/index.html';
+      }
+    });
+  </script>
+</body>
+</html>

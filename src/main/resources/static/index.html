@@ -1,0 +1,197 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Ecommerce App - Auth</title>
+  <link rel="stylesheet" href="/css/styles.css" />
+</head>
+<body>
+  <nav class="navbar">
+    <a href="/index.html">Home</a>
+    <a href="/products.html">Products</a>
+    <a href="/cart.html">Cart</a>
+    <a href="/orders.html">Orders</a>
+    <a href="/admin-dashboard.html">Admin</a>
+  </nav>
+
+  <main class="container">
+    <h1>Welcome to Ecommerce Tester</h1>
+
+    <div class="tabs">
+      <button id="tab-login" class="tab active">Login</button>
+      <button id="tab-register" class="tab">Register</button>
+    </div>
+
+    <section id="login-section" class="tab-section">
+      <form id="login-form">
+        <div class="form-group">
+          <label for="login-username">Username</label>
+          <input id="login-username" name="username" type="text" required />
+        </div>
+        <div class="form-group">
+          <label for="login-password">Password</label>
+          <input id="login-password" name="password" type="password" required />
+        </div>
+        <div id="login-error" class="error-message" aria-live="polite"></div>
+        <div class="form-actions">
+          <button type="submit" class="btn">Login</button>
+        </div>
+      </form>
+    </section>
+
+    <section id="register-section" class="tab-section hidden">
+      <form id="register-form">
+        <div class="form-group">
+          <label for="reg-name">Name</label>
+          <input id="reg-name" name="name" type="text" required />
+        </div>
+        <div class="form-group">
+          <label for="reg-username">Username</label>
+          <input id="reg-username" name="userName" type="text" required />
+        </div>
+        <div class="form-group">
+          <label for="reg-email">Email</label>
+          <input id="reg-email" name="emailId" type="email" required />
+        </div>
+        <div class="form-group">
+          <label for="reg-password">Password</label>
+          <input id="reg-password" name="password" type="password" required />
+        </div>
+        <div class="form-group">
+          <label for="reg-confirm">Confirm Password</label>
+          <input id="reg-confirm" name="confirmPassword" type="password" required />
+        </div>
+        <div class="form-group">
+          <label for="reg-contact">Contact No</label>
+          <input id="reg-contact" name="contactNo" type="text" />
+        </div>
+
+        <fieldset class="address-fieldset">
+          <legend>Address</legend>
+          <div class="form-group">
+            <label for="reg-street">Street</label>
+            <input id="reg-street" name="street" type="text" />
+          </div>
+          <div class="form-group">
+            <label for="reg-city">City</label>
+            <input id="reg-city" name="city" type="text" />
+          </div>
+          <div class="form-group">
+            <label for="reg-state">State</label>
+            <input id="reg-state" name="state" type="text" />
+          </div>
+          <div class="form-group">
+            <label for="reg-pincode">Pincode</label>
+            <input id="reg-pincode" name="pincode" type="text" />
+          </div>
+        </fieldset>
+
+        <div id="register-messages" aria-live="polite"></div>
+
+        <div class="form-actions">
+          <button type="submit" class="btn">Register</button>
+        </div>
+      </form>
+    </section>
+  </main>
+
+  <script src="/js/api.js"></script>
+  <script src="/js/auth.js"></script>
+  <script>
+    // Tab switching
+    const tabLogin = document.getElementById('tab-login');
+    const tabRegister = document.getElementById('tab-register');
+    const loginSection = document.getElementById('login-section');
+    const registerSection = document.getElementById('register-section');
+
+    tabLogin.addEventListener('click', () => {
+      tabLogin.classList.add('active');
+      tabRegister.classList.remove('active');
+      loginSection.classList.remove('hidden');
+      registerSection.classList.add('hidden');
+    });
+
+    tabRegister.addEventListener('click', () => {
+      tabRegister.classList.add('active');
+      tabLogin.classList.remove('active');
+      registerSection.classList.remove('hidden');
+      loginSection.classList.add('hidden');
+    });
+
+    // LOGIN: call auth.login() but override alert to show inline message
+    const loginForm = document.getElementById('login-form');
+    const loginError = document.getElementById('login-error');
+
+    loginForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      loginError.textContent = '';
+
+      const username = document.getElementById('login-username').value.trim();
+      const password = document.getElementById('login-password').value.trim();
+
+      // Temporarily override alert to show inline message
+      const originalAlert = window.alert;
+      window.alert = function(msg) {
+        loginError.textContent = msg;
+      };
+
+      try {
+        // auth.login is async and will call alert(...) on error
+        await login(username, password);
+      } finally {
+        // Restore alert
+        window.alert = originalAlert;
+      }
+    });
+
+    // REGISTER: use request() directly to show inline validation messages
+    const registerForm = document.getElementById('register-form');
+    const registerMessages = document.getElementById('register-messages');
+
+    registerForm.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      registerMessages.textContent = '';
+
+      const body = {
+        name: document.getElementById('reg-name').value.trim(),
+        userName: document.getElementById('reg-username').value.trim(),
+        emailId: document.getElementById('reg-email').value.trim(),
+        password: document.getElementById('reg-password').value,
+        confirmPassword: document.getElementById('reg-confirm').value,
+        contactNo: document.getElementById('reg-contact').value.trim(),
+        address: {
+          street: document.getElementById('reg-street').value.trim(),
+          city: document.getElementById('reg-city').value.trim(),
+          state: document.getElementById('reg-state').value.trim(),
+          pincode: document.getElementById('reg-pincode').value.trim()
+        }
+      };
+
+      try {
+        const resp = await request('POST', '/api/createUser', body);
+
+        // Expecting accessToken & refreshToken in response
+        if (resp.accessToken && resp.refreshToken) {
+          localStorage.setItem('accessToken', resp.accessToken);
+          localStorage.setItem('refreshToken', resp.refreshToken);
+          localStorage.setItem('role', 'ROLE_CUSTOMER');
+
+          // Redirect to products page
+          window.location.href = '/products.html';
+          return;
+        }
+
+        // If server returned non-standard success
+        registerMessages.textContent = 'Registration succeeded but tokens missing.';
+        registerMessages.className = 'success-message';
+      } catch (err) {
+        // Show inline errors
+        //console.error('Register error', err);
+        registerMessages.textContent = err.message || 'Registration failed';
+        registerMessages.className = 'error-message';
+      }
+    });
+  </script>
+</body>
+</html>
