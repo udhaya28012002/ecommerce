@@ -7,6 +7,8 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.util.List;
+
 @RestController
 @RequestMapping("/api/products")
 public class ProductController {
@@ -17,9 +19,9 @@ public class ProductController {
         this.productService = productService;
     }
 
-    @PostMapping("/addProduct")
+    @PostMapping("/addProducts")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> addProduct(@RequestBody ProductReqDto productReqDto){
+    public ResponseEntity<?> addProduct(@RequestBody List<ProductReqDto> productReqDto){
         return ResponseEntity.status(HttpStatus.CREATED).body(productService.addProduct(productReqDto));
     }
 
@@ -27,6 +29,12 @@ public class ProductController {
     @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
     public ResponseEntity<?> getAllProducts(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
         return ResponseEntity.ok(productService.showAllProducts(page, size));
+    }
+
+    @GetMapping("/listAllProductsForAdmin")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
+    public ResponseEntity<?> getAllProductsForAdmin(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size){
+        return ResponseEntity.ok(productService.showAllProductsForAdmin(page, size));
     }
 
     @GetMapping("/listProductByCategory/{categoryId}")

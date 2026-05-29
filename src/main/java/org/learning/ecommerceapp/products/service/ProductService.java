@@ -3,6 +3,7 @@ package org.learning.ecommerceapp.products.service;
 import jakarta.transaction.Transactional;
 import org.learning.ecommerceapp.products.dto.ProductRawDto;
 import org.learning.ecommerceapp.products.dto.request.ProductReqDto;
+import org.learning.ecommerceapp.products.dto.response.AdminProductResDto;
 import org.learning.ecommerceapp.products.dto.response.ProductResDto;
 import org.learning.ecommerceapp.inventory.entity.Inventory;
 import org.learning.ecommerceapp.category.entity.ProductCategory;
@@ -45,26 +46,43 @@ public class ProductService {
         return productPage.map(this::convertToDto);
     }
 
+    public Page<AdminProductResDto> showAllProductsForAdmin(int page, int size) {
+        Pageable pageable = PageRequest.of(page, size);
 
-    public String addProduct(ProductReqDto productReqDto) {
+        Page<Products> productPage = productRepository.findAll(pageable);
 
-        //Need to validate if the user is of Admin:
-        Products product = new Products(
-                productReqDto.getName(),
-                productReqDto.getPrice(),
-                productReqDto.getShortDescription(),
-                getProductCategory(productReqDto.getCategoryId()),
-                null
-        );
-        productRepository.save(product);
+        return productPage.map(this::convertToDtoForAdmin);
+    }
 
-        Inventory inventory = new Inventory();
-        inventory.setProduct(product);
-        inventory.setProductQuantity(productReqDto.getQuantity());
 
-        inventoryRepository.save(inventory);
+    @Transactional
+    public String addProduct(List<ProductReqDto> productReqDtos) {
 
-        return "Successfully added";
+        for (ProductReqDto productReqDto : productReqDtos) {
+
+            // Validate category
+            ProductCategory category = getProductCategory(productReqDto.getCategoryId());
+
+            // Create product
+            Products product = new Products(
+                    productReqDto.getName(),
+                    productReqDto.getPrice(),
+                    productReqDto.getShortDescription(),
+                    category,
+                    null
+            );
+
+            Products savedProduct = productRepository.save(product);
+
+            // Create inventory
+            Inventory inventory = new Inventory();
+            inventory.setProduct(savedProduct);
+            inventory.setProductQuantity(productReqDto.getQuantity());
+
+            inventoryRepository.save(inventory);
+        }
+
+        return "Products added successfully";
     }
 
     public Page<ProductResDto> listProductsBasedOnCategory(long categoryId, int page, int size) {
@@ -267,6 +285,16 @@ public class ProductService {
                 product.getShortDescription(),
                 product.getProductCategory().getCategoryName(),
                 mapStatus(product.getInventory().getProductQuantity()));
+    }
+
+    private AdminProductResDto convertToDtoForAdmin(Products product) {
+        return new AdminProductResDto(
+                product.getProductId(),
+                product.getName(),
+                product.getPrice(),
+                product.getShortDescription(),
+                product.getProductCategory().getCategoryName(),
+                product.getInventory().getProductQuantity());
     }
 
     private Products validateProductPresence(long productId) {

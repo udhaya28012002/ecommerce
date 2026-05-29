@@ -2,17 +2,20 @@ package org.learning.ecommerceapp.discount.dto;
 
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
 import org.learning.ecommerceapp.discount.entity.DiscountType;
 
 public class AddDiscountDto {
 
     @NotBlank(message = "Coupon Code is required")
+    @NotNull(message = "Coupon Code is required")
     private String couponCode;
 
     @NotBlank(message = "Coupon Description is required")
+    @NotNull(message = "Coupon Description is required")
     private String description;
 
-    @NotBlank(message = "DiscountType should be required")
+    @NotNull(message = "DiscountType should be required")
     private DiscountType discountType;
 
     @Min(value = 1, message = "Discount value should be valid")

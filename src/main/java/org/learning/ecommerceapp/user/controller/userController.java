@@ -32,10 +32,10 @@ public class userController {
         return ResponseEntity.status(HttpStatus.CREATED).body(userService.createUser(userReqDto, false));
     }*/
 
-    @PostMapping("/getUsers")
+    @GetMapping("/getUsers")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> getUsers(@Valid @RequestBody LoginReqDto loginReq) {
-        return ResponseEntity.ok(userService.getAllUsers(loginReq));
+    public ResponseEntity<?> getUsers(@RequestParam(defaultValue = "0") int page, @RequestParam(defaultValue = "10") int size) {
+        return ResponseEntity.ok(userService.getAllUsers(page, size));
     }
 
     /*@PostMapping("/getUser")

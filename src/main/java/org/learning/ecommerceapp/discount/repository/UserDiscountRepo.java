@@ -25,5 +25,10 @@ public interface UserDiscountRepo extends JpaRepository<DiscountOnUsers, Long> {
 
     boolean existsByUsersAndCouponCode(Users users, String couponCode);
 
+    @Query("""
+                SELECT d.users.id
+                FROM DiscountOnUsers d
+                WHERE d.couponCode = :couponCode
+            """)
     List<Long> findUserIdsByCouponCode(String couponCode);
 }

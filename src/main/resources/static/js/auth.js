@@ -25,8 +25,14 @@ async function login(username, password) {
 
         // Decode JWT to get role (assuming standard JWT structure)
         const decodedToken = decodeJWT(data.accessToken);
-        const role = decodedToken.authorities ? decodedToken.authorities[0] : 'ROLE_CUSTOMER';
+        //const role = decodedToken.authorities ? decodedToken : 'ROLE_CUSTOMER';
+
+        const role = (decodedToken || 'ROLE_CUSTOMER').toString().replace(/[\[\]]/g, '').trim();
+
         localStorage.setItem('role', role);
+
+        console.log('Login successful. Role:', role);
+        console.log(role === 'ROLE_ADMIN')
 
         // Redirect based on role
         if (role === 'ROLE_ADMIN') {
@@ -139,7 +145,9 @@ function decodeJWT(token) {
     const payload = parts[1];
     const decoded = JSON.parse(atob(payload));
 
-    return decoded;
+    console.log('Decoded JWT:', decoded.role);
+
+    return decoded.role;
   } catch (error) {
     //console.error('Failed to decode JWT:', error);
     return {};

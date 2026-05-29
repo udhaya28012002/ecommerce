@@ -9,7 +9,6 @@ import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.ProviderManager;
 import org.springframework.security.authentication.dao.DaoAuthenticationProvider;
-import org.springframework.security.config.Customizer;
 import org.springframework.security.config.annotation.method.configuration.EnableMethodSecurity;
 import org.springframework.security.config.annotation.web.builders.HttpSecurity;
 import org.springframework.security.config.annotation.web.configuration.EnableWebSecurity;
@@ -50,6 +49,12 @@ public class SecurityConfig {
                                 "/orders.html",
                                 "/products.html",
                                 "/profile.html",
+                                "/product-detail.html",
+                                "/admin-dashboard.html",
+                                "/admin-coupons.html",
+                                "/admin-orders.html",
+                                "/admin-users.html",
+                                "/admin-products.html",
                                 "/css/**",
                                 "/js/**",
                                 "/api/authenticate",

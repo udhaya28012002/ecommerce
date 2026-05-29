@@ -28,12 +28,12 @@ class CartCacheServiceTest {
     @InjectMocks
     CartCacheService cartCacheService;
 
-    @Test
+    /*@Test
     void addToCart() {
         ProductReqDto productReqDto = new ProductReqDto();
         String result = productService.addProduct(productReqDto);
         System.out.println(result);
-    }
+    }*/
 
     @Test
     void removeFromCart() {

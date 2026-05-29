@@ -26,13 +26,13 @@ function guard(requiredRole = null) {
   }
 
   // If page requires admin role but user is not admin
-  if (requiredRole === 'admin' && userRole !== 'ROLE_ADMIN') {
+if (requiredRole === 'admin' && !userRole.includes('ROLE_ADMIN')) {
     window.location.href = '/products.html';
     return;
   }
 
   // If page requires customer role but user is admin
-  if (requiredRole === 'customer' && userRole === 'ROLE_ADMIN') {
+if (requiredRole === 'customer' && userRole.includes('ROLE_ADMIN')) {
     window.location.href = '/admin-dashboard.html';
     return;
   }

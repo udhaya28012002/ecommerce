@@ -29,4 +29,12 @@ public class CategoryController {
         return ResponseEntity.accepted().build();
     }
 
+    @GetMapping("/getCategories")
+    @PreAuthorize("hasAnyRole('CUSTOMER', 'ADMIN')")
+    public ResponseEntity<?> getCategories(){
+        return ResponseEntity.ok(categoryService.getAllCategories());
+    }
+
+
+
 }

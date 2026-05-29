@@ -19,6 +19,18 @@ public class CouponDetailsRes {
 
     private LocalDate endDate;
 
+    private boolean isActive;
+
+    private int usageLimit;
+
+    public int getUsageLimit() {
+        return usageLimit;
+    }
+
+    public void setUsageLimit(int usageLimit) {
+        this.usageLimit = usageLimit;
+    }
+
     public boolean isActive() {
         return isActive;
     }
@@ -27,9 +39,7 @@ public class CouponDetailsRes {
         isActive = active;
     }
 
-    private boolean isActive;
-
-    public CouponDetailsRes(String description, DiscountType discountType, BigDecimal discountValue, BigDecimal minimumOrderAmount, BigDecimal maximumDiscountAmount, LocalDate endDate, boolean isActive) {
+    public CouponDetailsRes(String description, DiscountType discountType, BigDecimal discountValue, BigDecimal minimumOrderAmount, BigDecimal maximumDiscountAmount, LocalDate endDate, boolean isActive, int usageLimit) {
         this.description = description;
         this.discountType = discountType;
         this.discountValue = discountValue;
@@ -37,6 +47,7 @@ public class CouponDetailsRes {
         this.maximumDiscountAmount = maximumDiscountAmount;
         this.endDate = endDate;
         this.isActive = isActive;
+        this.usageLimit = usageLimit;
     }
 
     public String getDescription() {

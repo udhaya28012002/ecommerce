@@ -11,7 +11,7 @@
     minPrice: document.getElementById('min-price'),
     maxPrice: document.getElementById('max-price'),
     inStock: document.getElementById('in-stock-only'),
-    categoryId: document.getElementById('filter-category')
+    categorySelect: document.getElementById('category-select')
   };
 
   document.getElementById('apply-filters').addEventListener('click', () => {
@@ -24,7 +24,7 @@
     controls.minPrice.value = '';
     controls.maxPrice.value = '';
     controls.inStock.checked = false;
-    controls.categoryId.value = '';
+    controls.categorySelect.value = '';
     page = 0;
     loadProducts();
   });
@@ -54,12 +54,44 @@
     sortByName(false);
   });
 
+  controls.categorySelect.addEventListener('change', () => {
+    page = 0;
+    loadProducts();
+  });
+
   controls.searchName.addEventListener('keyup', function(e) {
     if (e.key === 'Enter') {
       page = 0;
       loadProducts();
     }
   });
+
+  async function showMessage(text, type = 'error') {
+    messages.textContent = text;
+    messages.className = type === 'error' ? 'error-message' : 'success-message';
+    setTimeout(() => { messages.textContent = ''; messages.className = ''; }, 5000);
+  }
+
+  async function loadCategories() {
+    try {
+      const resp = await request('GET', '/api/categories/getCategories');
+      const categories = Array.isArray(resp) ? resp : (resp.categories || resp || []);
+
+      //console.log('Parsed categories:', categories);
+      
+      if (categories && categories.length > 0) {
+        categories.forEach(cat => {
+          const option = document.createElement('option');
+          option.value = cat.categoryId;
+          option.textContent = cat.categoryName;
+          controls.categorySelect.appendChild(option);
+        });
+        //console.log('Loaded ' + categories.length + ' categories');
+      }
+    } catch (err) {
+      console.error('Failed to load categories', err);
+    }
+  }
 
   async function showMessage(text, type = 'error') {
     messages.textContent = text;
@@ -84,7 +116,9 @@
       const min = controls.minPrice.value;
       const max = controls.maxPrice.value;
       const inStock = controls.inStock.checked;
-      const categoryId = controls.categoryId.value.trim();
+      const categoryId = controls.categorySelect.value.trim();
+
+      //console.log('Filter values:', { name, categoryId, min, max, inStock });
 
       let resp;
 
@@ -92,8 +126,8 @@
         resp = await request('GET', `/api/products/getInStockProducts?page=${page}&size=${size}`);
       } else if (name) {
         resp = await request('GET', `/api/products/findByMatchingName/${encodeURIComponent(name)}?page=${page}&size=${size}`);
-      } else if (categoryId) {
-        resp = await request('GET', `/api/products/listProductByCategory/${encodeURIComponent(categoryId)}?page=${page}&size=${size}`);
+      } else if (categoryId && categoryId !== '') {
+        resp = await request('GET', `/api/products/listProductByCategory/${categoryId}?page=${page}&size=${size}`);
       } else if (min || max) {
         const qmin = min ? min : 0;
         const qmax = max ? max : 999999999;
@@ -106,6 +140,7 @@
       renderTable(products);
     } catch (err) {
       //console.error('Load products failed', err);
+      renderTable([]);
       showMessage(err.message || 'Failed to load products', 'error');
     }
   }
@@ -191,6 +226,7 @@
 
   // initial load
   document.addEventListener('DOMContentLoaded', () => {
+    loadCategories();
     loadProducts();
   });
 

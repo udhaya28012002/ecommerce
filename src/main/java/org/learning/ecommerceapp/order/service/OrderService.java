@@ -9,6 +9,7 @@ import org.learning.ecommerceapp.discount.dto.ApplyCouponResponse;
 import org.learning.ecommerceapp.discount.service.DiscountService;
 import org.learning.ecommerceapp.order.dto.request.OrderItemRequestDto;
 import org.learning.ecommerceapp.order.dto.request.PlaceOrderRequest;
+import org.learning.ecommerceapp.order.dto.response.AdminOrdersResDto;
 import org.learning.ecommerceapp.order.dto.response.OrderItemsResponseDto;
 import org.learning.ecommerceapp.order.dto.response.OrdersResDto;
 import org.learning.ecommerceapp.order.entity.OrderItems;
@@ -255,7 +256,7 @@ public class OrderService {
                 .toList();
     }*/
 
-    public List<OrdersResDto> getAllOrders() {
+    public List<AdminOrdersResDto> getAllOrders() {
 
         List<Orders> ordersList = orderServiceRepository.findAll();
 
@@ -264,7 +265,7 @@ public class OrderService {
         }
 
         return ordersList.stream()
-                .map(this::buildOrderResDto)
+                .map(this::buildOrderResDtoForAdmin)
                 .toList();
     }
 
@@ -386,6 +387,28 @@ public class OrderService {
 
     private OrdersResDto buildOrderResDto(Orders savedOrder) {
         OrdersResDto ordersResDto = new OrdersResDto();
+        ordersResDto.setOrderNumber(savedOrder.getOrderNumber());
+        ordersResDto.setOrderStatus(savedOrder.getOrderStatus());
+        ordersResDto.setOrderDate(savedOrder.getOrderDate().withNano(0));
+        ordersResDto.setOrderItemsResponse(
+                savedOrder.getOrderItemsList().stream()
+                        .map(item -> new OrderItemsResponseDto(
+                                item.getQuantity(),
+                                item.getSellingPrice(),
+                                item.getDiscount(),
+                                item.getTotalPrice(),
+                                item.getProduct().getName()
+                        ))
+                        .toList()
+        );
+        ordersResDto.setFinalPrice(savedOrder.getFinalPrice());
+        ordersResDto.setAppliedCoupon(savedOrder.getAppliedCoupon());
+        return ordersResDto;
+    }
+
+    private AdminOrdersResDto buildOrderResDtoForAdmin(Orders savedOrder) {
+        AdminOrdersResDto ordersResDto = new AdminOrdersResDto();
+        ordersResDto.setUsername(savedOrder.getUsers().getUsername());
         ordersResDto.setOrderNumber(savedOrder.getOrderNumber());
         ordersResDto.setOrderStatus(savedOrder.getOrderStatus());
         ordersResDto.setOrderDate(savedOrder.getOrderDate().withNano(0));

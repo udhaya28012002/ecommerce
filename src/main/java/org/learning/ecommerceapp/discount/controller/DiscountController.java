@@ -1,5 +1,6 @@
 package org.learning.ecommerceapp.discount.controller;
 
+import jakarta.validation.Valid;
 import org.learning.ecommerceapp.discount.dto.AddDiscountDto;
 import org.learning.ecommerceapp.discount.service.DiscountService;
 import org.springframework.http.HttpStatus;
@@ -26,7 +27,7 @@ public class DiscountController {
 
     @PostMapping("/addCouponsToAllUsers")
     @PreAuthorize("hasRole('ADMIN')")
-    public ResponseEntity<?> assignDiscountToAllUsers(@RequestBody AddDiscountDto addDiscountDto){
+    public ResponseEntity<?> assignDiscountToAllUsers(@Valid @RequestBody AddDiscountDto addDiscountDto){
         discountService.assignDiscountToAllUsers(addDiscountDto);
         return ResponseEntity.status(HttpStatus.CREATED).body("Coupons assigned successfully");
     }

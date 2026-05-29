@@ -10,6 +10,9 @@ import org.learning.ecommerceapp.user.enums.UserStatus;
 import org.learning.ecommerceapp.user.exception.*;
 import org.learning.ecommerceapp.user.repository.UserRepo;
 import org.learning.ecommerceapp.util.CurrentUserService;
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.PageRequest;
+import org.springframework.data.domain.Pageable;
 import org.springframework.security.authentication.DisabledException;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -90,26 +93,23 @@ public class UserService implements UserDetailsService {
         return userRepo.save(user);
     }
 
-    public List<UserResDto> getAllUsers(LoginReqDto loginReq) {
+    public Page<UserResDto> getAllUsers(int page, int size) {
 
-        if (!isAdmin(loginReq)) {
-            throw new UserAccessDeniedException("Admin access required");
-        }
+        Pageable pageable = PageRequest.of(page, size);
 
-        List<Users> allUsers = userRepo.findAll();
+        Page<Users> allUsers = userRepo.findAll(pageable);
 
         if (allUsers.isEmpty()) {
-            throw new ResourceNotFoundException("There is no users in the database");
+            throw new ResourceNotFoundException("There are no users in the database");
         }
 
-        return allUsers.stream()
-                .map(user -> new UserResDto(
-                        user.getName(),
-                        user.getUserName(),
-                        user.getEmailId(),
-                        user.getContactNo(),
-                        user.getAddress()
-                )).toList();
+        return allUsers.map(user -> new UserResDto(
+                user.getName(),
+                user.getUserName(),
+                user.getEmailId(),
+                user.getContactNo(),
+                user.getAddress()
+        ));
     }
 
     /*public UserResDto getUser(LoginReqDto loginReq) {

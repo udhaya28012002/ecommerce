@@ -1,5 +1,6 @@
 package org.learning.ecommerceapp.category.service;
 
+import org.learning.ecommerceapp.category.dto.CategoryResDto;
 import org.learning.ecommerceapp.category.entity.ProductCategory;
 import org.learning.ecommerceapp.category.repository.ProductCategoryRepository;
 import org.learning.ecommerceapp.category.exception.CategoryAlreadyExistsException;
@@ -8,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 @Service
 public class CategoryService {
@@ -18,11 +20,11 @@ public class CategoryService {
         this.productCategoryRepository = productCategoryRepository;
     }
 
-    public void createCategory(String categoryName){
+    public void createCategory(String categoryName) {
 
         boolean exists = productCategoryRepository.existsByCategoryNameIgnoreCase(categoryName);
 
-        if(exists){
+        if (exists) {
             throw new CategoryAlreadyExistsException("Category Already Exists");
         }
 
@@ -32,7 +34,7 @@ public class CategoryService {
     }
 
     @Transactional
-    public void updateCategory(long oldCategoryId, String newCategoryName){
+    public void updateCategory(long oldCategoryId, String newCategoryName) {
 
         ProductCategory pc = productCategoryRepository
                 .findById(oldCategoryId)
@@ -45,7 +47,7 @@ public class CategoryService {
         pc.setCategoryName(newCategoryName);
     }
 
-    public ProductCategory getCategoryById(long categoryId){
+    public ProductCategory getCategoryById(long categoryId) {
         return productCategoryRepository
                 .findById(categoryId)
                 .orElseThrow(() ->
@@ -55,14 +57,22 @@ public class CategoryService {
                 );
     }
 
-    public List<ProductCategory> getAllCategories(){
+    public List<CategoryResDto> getAllCategories() {
         List<ProductCategory> list = productCategoryRepository.findAll();
 
-        if(list.isEmpty()){
+        if (list.isEmpty()) {
             throw new CategoryNotFoundException("No Category found");
         }
 
-        return list;
+        return list.stream()
+                .map((productCategory) -> {
+                            CategoryResDto categoryResDto = new CategoryResDto();
+                            categoryResDto.setCategoryId(productCategory.getCategoryId());
+                            categoryResDto.setCategoryName(productCategory.getCategoryName());
+                            return categoryResDto;
+                        }
+                ).toList();
     }
+
 
 }

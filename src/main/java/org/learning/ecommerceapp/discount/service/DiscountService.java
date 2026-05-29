@@ -62,6 +62,9 @@ public class DiscountService {
     @Transactional
     public void assignDiscountToAllUsers(AddDiscountDto dto) {
 
+        System.out.println(dto.getCouponCode() + " : " + dto.getDescription() + " : " + dto.getDiscountType() + " : " + dto.getDiscountValue() + " : " + dto.getMaxDiscountAmount() +
+                " : " + dto.getMinAmtOrder() + " : " + dto.getValidityInMonths()+ " : " + dto.getUsageLimit());
+
         List<Users> allUsers = userService.findAllUsers_ForInternal();
 
         List<Long> existingUserIds = userDiscountRepo.findUserIdsByCouponCode(dto.getCouponCode());
@@ -179,7 +182,6 @@ public class DiscountService {
     public DisplayCouponsRes displayAllCoupons() {
 
         Set<DiscountOnUsers> discountOnUsers = new HashSet<>(userDiscountRepo.findAll());
-
         return buildCouponDetailsRes(discountOnUsers);
     }
 
@@ -259,7 +261,8 @@ public class DiscountService {
                                         discount.getMinimumOrderAmount(),
                                         discount.getMaximumDiscountAmount(),
                                         discount.getEndDate(),
-                                        discount.getActive()
+                                        discount.getActive(),
+                                        discount.getUsageLimit()
                                 ),
                         (existing, duplicate) -> existing
                 ));
