@@ -44,8 +44,21 @@
         <h3>Place Order</h3>
         <div class="form-group">
           <label for="coupon-code">Coupon Code (optional)</label>
-          <input id="coupon-code" type="text" />
+          <div style="display:flex;gap:8px;align-items:center;">
+            <input id="coupon-code" type="text" style="flex:1;" />
+            <button id="view-coupons-btn" class="btn" style="white-space:nowrap;">View Coupons</button>
+          </div>
         </div>
+
+        <!-- Available Coupons Modal -->
+        <div id="coupons-modal" style="display:none;border:1px solid #ddd;border-radius:4px;padding:12px;margin-top:12px;background:#f9f9f9;max-height:400px;overflow-y:auto;">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
+            <h4 style="margin:0;">Available Coupons</h4>
+            <button id="close-coupons-modal" class="btn" style="padding:4px 8px;font-size:12px;">Close</button>
+          </div>
+          <div id="coupons-list" style="display:flex;flex-direction:column;gap:10px;"></div>
+        </div>
+
         <div class="form-actions">
           <button id="place-order" class="btn">Place Order</button>
         </div>

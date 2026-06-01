@@ -9,7 +9,7 @@ import java.math.BigDecimal;
 import java.time.LocalDateTime;
 
 @Entity
-public class GlobalDiscount {
+public class GlobalDiscountOnProducts {
 
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

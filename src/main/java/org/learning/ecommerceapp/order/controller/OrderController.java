@@ -3,6 +3,8 @@ package org.learning.ecommerceapp.order.controller;
 import org.learning.ecommerceapp.order.dto.request.PlaceOrderRequest;
 import org.learning.ecommerceapp.order.service.OrderRetryService;
 import org.learning.ecommerceapp.order.service.OrderService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
@@ -15,6 +17,8 @@ public class OrderController {
     private final OrderService orderService;
     private final OrderRetryService orderRetryService;
 
+    private static final Logger log = LoggerFactory.getLogger(OrderController.class);
+
     public OrderController(OrderService orderService, OrderRetryService orderRetryService) {
         this.orderService = orderService;
         this.orderRetryService = orderRetryService;
@@ -23,18 +27,27 @@ public class OrderController {
     @PostMapping("/placeOrder")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<?> placeOrder(@RequestBody PlaceOrderRequest placeOrderRequest){
+
+        log.debug("Place order request received");
+
         return ResponseEntity.status(HttpStatus.CREATED).body(orderRetryService.placeOrderRetry(placeOrderRequest));
     }
 
     @GetMapping("/getOrder/{orderNumber}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<?> getOrderByOrderNumber(@PathVariable String orderNumber){
+
+        log.info("Fetching order details. OrderNumber: {}", orderNumber);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.getOrderByOrderNumber(orderNumber));
     }
 
     @GetMapping("/getOrders")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<?> getOrders(){
+
+        log.info("Fetching logged-in user orders");
+
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.getUserOrdersByUserName());
     }
 
@@ -53,48 +66,72 @@ public class OrderController {
     @GetMapping("/getAllOrders")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> getAllOrders(){
+
+        log.info("Fetching all orders");
+
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.getAllOrders());
     }
 
     @PatchMapping("/updateOrder/pending/{orderNumber}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateOrderToPending(@PathVariable String orderNumber){
+
+        log.info("Updating order status to PENDING. OrderNumber: {}", orderNumber);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.markOrderAsPending(orderNumber));
     }
 
     @PatchMapping("/updateOrder/confirmed/{orderNumber}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateOrderToConfirmed(@PathVariable String orderNumber){
+
+        log.info("Updating order status to CONFIRMED. OrderNumber: {}", orderNumber);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.markOrderAsConfirmed(orderNumber));
     }
 
     @PatchMapping("/updateOrder/processing/{orderNumber}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateOrderToProcessing(@PathVariable String orderNumber){
+
+        log.info("Updating order status to PROCESSING. OrderNumber: {}", orderNumber);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.markOrderAsProcessing(orderNumber));
     }
 
     @PatchMapping("/updateOrder/shipped/{orderNumber}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateOrderToShipped(@PathVariable String orderNumber){
+
+        log.info("Updating order status to SHIPPED. OrderNumber: {}", orderNumber);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.markAsShipped(orderNumber));
     }
 
     @PatchMapping("/updateOrder/outForDelivery/{orderNumber}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateOrderToOutForDelivery(@PathVariable String orderNumber){
+
+        log.info("Updating order status to OUT_FOR_DELIVERY. OrderNumber: {}", orderNumber);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.markOrderAsOutForDelivery(orderNumber));
     }
 
     @PatchMapping("/updateOrder/delivered/{orderNumber}")
     @PreAuthorize("hasRole('ADMIN')")
     public ResponseEntity<?> updateOrderToDelivered(@PathVariable String orderNumber){
+
+        log.info("Updating order status to DELIVERED. OrderNumber: {}", orderNumber);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.markOrderAsDelivered(orderNumber));
     }
 
     @PatchMapping("/cancelOrder/{orderNumber}")
     @PreAuthorize("hasRole('CUSTOMER')")
     public ResponseEntity<?> cancelOrder(@PathVariable String orderNumber){
+
+        log.debug("Cancel order request received. OrderNumber: {}", orderNumber);
+
         return ResponseEntity.status(HttpStatus.CREATED).body(orderService.cancelOrder(orderNumber));
     }
 }

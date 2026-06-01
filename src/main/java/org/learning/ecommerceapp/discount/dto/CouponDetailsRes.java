@@ -1,5 +1,6 @@
 package org.learning.ecommerceapp.discount.dto;
 
+import com.fasterxml.jackson.annotation.JsonProperty;
 import org.learning.ecommerceapp.discount.entity.DiscountType;
 
 import java.math.BigDecimal;
@@ -19,6 +20,7 @@ public class CouponDetailsRes {
 
     private LocalDate endDate;
 
+    @JsonProperty("isActive")
     private boolean isActive;
 
     private int usageLimit;

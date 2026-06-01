@@ -32,7 +32,6 @@ class CartCacheServiceTest {
     void addToCart() {
         ProductReqDto productReqDto = new ProductReqDto();
         String result = productService.addProduct(productReqDto);
-        System.out.println(result);
     }*/
 
     @Test

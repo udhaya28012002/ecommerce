@@ -14,6 +14,8 @@ import org.learning.ecommerceapp.discount.repository.UserDiscountRepo;
 import org.learning.ecommerceapp.user.entity.Users;
 import org.learning.ecommerceapp.user.service.UserService;
 import org.learning.ecommerceapp.util.CurrentUserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Propagation;
 import org.springframework.transaction.annotation.Transactional;
@@ -26,6 +28,8 @@ import java.util.stream.Collectors;
 
 @Service
 public class DiscountService {
+
+    private static final Logger log = LoggerFactory.getLogger(DiscountService.class);
 
     private final GlobalDiscountRepo globalDiscountRepo;
     private final UserDiscountRepo userDiscountRepo;
@@ -44,12 +48,20 @@ public class DiscountService {
 
     public void assignWelcomeCoupon(Users user) {
 
+        log.debug("Assigning welcome coupon for user: {}", user.getUsername());
+
         LocalDateTime registrationTime = user.getCreatedAt();
         if (registrationTime.isBefore(LocalDateTime.now().minusDays(1))) {
+
+            log.warn("Welcome coupon not applicable for user: {}", user.getUsername());
+
             throw new DiscountNotApplicable("Welcome Gift is only new users.");
         }
 
         if (userDiscountRepo.existsByUsersAndCouponCode(user, NEW_USER_COUPON)) {
+
+            log.warn("Welcome coupon already assigned for user: {}", user.getUsername());
+
             throw new DuplicateDiscountException("Discount already exists for this product");
         }
 
@@ -57,13 +69,14 @@ public class DiscountService {
 
         userDiscountRepo.save(discountOnUsers);
 
+        log.info("Welcome coupon assigned successfully for user: {}", user.getUsername());
+
     }
 
     @Transactional
     public void assignDiscountToAllUsers(AddDiscountDto dto) {
 
-        System.out.println(dto.getCouponCode() + " : " + dto.getDescription() + " : " + dto.getDiscountType() + " : " + dto.getDiscountValue() + " : " + dto.getMaxDiscountAmount() +
-                " : " + dto.getMinAmtOrder() + " : " + dto.getValidityInMonths()+ " : " + dto.getUsageLimit());
+        log.debug("Assigning coupon to all users. CouponCode: {}", dto.getCouponCode());
 
         List<Users> allUsers = userService.findAllUsers_ForInternal();
 
@@ -76,6 +89,9 @@ public class DiscountService {
         for (Users user : allUsers) {
 
             if (existingUserIds.contains(user.getId())) {
+
+                log.warn("Coupon already exists for user: {}", user.getUsername());
+
                 continue;
             }
 
@@ -90,13 +106,18 @@ public class DiscountService {
                     dto.getUsageLimit(),
                     expiry
             ));
+
         }
 
         userDiscountRepo.saveAll(discountedUsers);
+
+        log.info("Coupons assigned successfully to {} users", discountedUsers.size());
     }
 
     @Transactional
     public void assignDiscountToEligibleUsers(AddDiscountDto addDiscountDto, double filterPrice) {
+
+        log.debug("Assigning coupon to eligible users. CouponCode: {}, FilterPrice: {}", addDiscountDto.getCouponCode(), filterPrice);
 
         List<Users> filteredUsers = userDiscountRepo.findEligibleUsers(filterPrice);
 
@@ -109,6 +130,8 @@ public class DiscountService {
         for (Users user : filteredUsers) {
 
             if (existingUserIds.contains(user.getId())) {
+
+                log.warn("Coupon already assigned for user: {}", user.getUsername());
                 continue;
             }
 
@@ -127,8 +150,10 @@ public class DiscountService {
             discountedUsers.add(discountOnUsers);
 
         }
+
         userDiscountRepo.saveAll(discountedUsers);
 
+        log.info("Coupons assigned successfully to eligible users");
     }
 
     private DiscountOnUsers createDiscount(
@@ -158,30 +183,67 @@ public class DiscountService {
         );
     }
 
+    public void revertCoupon(String coupon) {
+
+        String loggedUser = currentUserService.getLoggedInUser();
+
+        log.debug("Reverting coupon: {} for user: {}", coupon, loggedUser);
+
+        Users user = userService.findByUsername_ForInternal(loggedUser);
+
+        int reactivateCoupon = userDiscountRepo.reactivateCoupon(user.getId(), coupon);
+        int decrementUsageCount = userDiscountRepo.decrementUsageCount(user.getId(), coupon);
+
+        if (reactivateCoupon == 0 || decrementUsageCount == 0) {
+            log.info("Coupon Reverted Failed for {} : {}", user.getUserName(), coupon);
+        } else {
+            log.info("Coupon Reverted for {} : {}", user.getUserName(), coupon);
+        }
+    }
+
     public boolean validateCoupon(String coupon) {
 
         String loggedUser = currentUserService.getLoggedInUser();
+
+        log.debug("Validating coupon: {} for user: {}", coupon, loggedUser);
+
         Users user = userService.findByUsername_ForInternal(loggedUser);
 
-        return userDiscountRepo.existsByUsersAndCouponCode(user, coupon);
+        boolean valid = userDiscountRepo.existsByUsersAndCouponCode(user, coupon);
+
+        log.info("Coupon validation result for {} : {}", coupon, valid);
+
+        return valid;
     }
 
     public DisplayCouponsRes displayCoupons() {
 
         String loggedUser = currentUserService.getLoggedInUser();
 
+        log.debug("Fetching coupons for user: {}", loggedUser);
+
         Users user = userService.findByUsername_ForInternal(loggedUser);
 
         if (user.getDiscountOnUsers().isEmpty()) {
+
+            log.warn("No coupons available for user: {}", loggedUser);
+
             throw new NoCouponAvailable("No applicable coupon available");
         }
+
+        log.info("Coupons fetched successfully for user: {}", loggedUser);
 
         return buildCouponDetailsRes(user.getDiscountOnUsers());
     }
 
     public DisplayCouponsRes displayAllCoupons() {
 
+        log.debug("Fetching all coupons");
+
         Set<DiscountOnUsers> discountOnUsers = new HashSet<>(userDiscountRepo.findAll());
+
+        log.info("Total coupons fetched: {}", discountOnUsers.size());
+
         return buildCouponDetailsRes(discountOnUsers);
     }
 
@@ -190,6 +252,8 @@ public class DiscountService {
     public ApplyCouponResponse applyDiscountByUsers(String couponCode, double purchasePrice) {
 
         String loggedUser = currentUserService.getLoggedInUser();
+
+        log.debug("Applying coupon. User: {}, CouponCode: {}, PurchasePrice: {}", loggedUser, couponCode, purchasePrice);
 
         Users user = userService.findByUsername_ForInternal(loggedUser);
 
@@ -202,16 +266,24 @@ public class DiscountService {
         ApplyCouponResponse applyCouponResponse = new ApplyCouponResponse();
 
         if (userDiscount.isEmpty()) {
+
+            log.warn("Coupon not available for user: {}", loggedUser);
+
             return failureResponse(couponCode, purchasePrice);
         }
 
         DiscountOnUsers discount = userDiscount.get();
 
-        if (!(discount.getActive()
+        boolean validCoupon = (discount.getActive()
                 && (!discount.getEndDate().isBefore(LocalDate.now()))
                 && (purchasePrice >= discount.getMinimumOrderAmount().doubleValue())
                 && (discount.getUsedCount() < discount.getUsageLimit())
-        )) {
+        );
+
+        if (!validCoupon) {
+
+            log.warn("Coupon validation failed for user: {}", loggedUser);
+
             return failureResponse(couponCode, purchasePrice);
         }
 
@@ -225,6 +297,8 @@ public class DiscountService {
 
         if (discount.getUsedCount() >= discount.getUsageLimit()) {
             discount.setActive(false);
+
+            log.info("Coupon deactivated after reaching usage limit. CouponCode: {}", couponCode);
         }
 
         applyCouponResponse.setApplied(true);
@@ -232,10 +306,14 @@ public class DiscountService {
         applyCouponResponse.setMessage(discount.getCouponCode() + " code is applied");
         applyCouponResponse.setFinalPrice(finalPriceAfterDiscounts);
 
+        log.info("Coupon applied successfully. User: {}, CouponCode: {}, FinalPrice: {}", loggedUser, couponCode, finalPriceAfterDiscounts);
+
         return applyCouponResponse;
     }
 
     private ApplyCouponResponse failureResponse(String couponCode, double purchasePrice) {
+
+        log.warn("Coupon application failed. CouponCode: {}", couponCode);
 
         ApplyCouponResponse response = new ApplyCouponResponse();
 
@@ -268,6 +346,9 @@ public class DiscountService {
                 ));
 
         displayCouponsRes.setAvailableCoupons(couponDetailsMap);
+
+        System.out.println(displayCouponsRes.getAvailableCoupons());
+
         return displayCouponsRes;
     }
 }

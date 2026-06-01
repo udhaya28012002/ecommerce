@@ -136,7 +136,6 @@
 
   document.getElementById('refresh-orders').addEventListener('click', loadOrders);
 
-  document.addEventListener('DOMContentLoaded', () => {
-    loadOrders();
-  });
+  // initial load
+  loadOrders();
 })();

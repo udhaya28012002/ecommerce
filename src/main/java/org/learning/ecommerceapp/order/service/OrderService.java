@@ -51,7 +51,7 @@ public class OrderService {
     @PersistenceContext
     private EntityManager entityManager;
 
-    private final Logger logger = LoggerFactory.getLogger(OrderService.class);
+    private final Logger log = LoggerFactory.getLogger(OrderService.class);
 
     public OrderService(ProductService productService, OrderServiceRepository orderServiceRepository, UserRepo userRepo, CurrentUserService currentUserService, DiscountService discountService) {
         this.productService = productService;
@@ -98,9 +98,14 @@ public class OrderService {
 
         String loggedUser = currentUserService.getLoggedInUser();
 
+        log.debug("Order placement started for user: {}", loggedUser);
+
         Users user = userRepo.findByUserName(loggedUser);
 
         if (placeOrderRequest.getItems() == null || placeOrderRequest.getItems().isEmpty()) {
+
+            log.warn("Order items missing for user: {}", loggedUser);
+
             throw new OrderItemsNotFoundException("Order info is missing");
         }
 
@@ -112,11 +117,15 @@ public class OrderService {
         order.setUsers(user);
         order.setOrderNumber("ORD-" + today.format(formatter));
 
+        log.info("Generated order number: {}", order.getOrderNumber());
+
         List<OrderItems> orderItemsList = buildOrderItems(placeOrderRequest, order, discount, deliveryCharge);
 
         double totalPricePerOrder = orderItemsList.stream()
                 .mapToDouble(OrderItems::getTotalPrice)
                 .sum();
+
+        log.info("Total order price before discount: {}", totalPricePerOrder);
 
         ApplyCouponResponse applyCouponResponse = checkCouponsAndRedeem(placeOrderRequest.getCouponCode(), totalPricePerOrder);
 
@@ -127,16 +136,20 @@ public class OrderService {
 
         order.setOrderItemsList(orderItemsList);
 
+        log.info("Final order price after discount: {}", finalPrice);
+
         // PAYMENT PAGE (IF SUCCESS WE NEED TO PLACE ORDER OTHERWISE REVERT),
 
         updatingStocks(orderItemsList);
+
+        log.info("Inventory updated successfully for order: {}", order.getOrderNumber());
 
         order.setOrderStatus(OrderStatus.CONFIRMED);
 
         Orders savedOrder = orderServiceRepository.save(order);
 
         if(savedOrder.getOrderStatus().equals(OrderStatus.CONFIRMED)){
-            logger.info("{}'s Order is confirmed : Order ID ({})",loggedUser, savedOrder.getOrderId());
+            log.info("Order confirmed successfully for user: {}. OrderId: {}",loggedUser, savedOrder.getOrderId());
         }
 
         return buildOrderResDto(savedOrder);
@@ -146,23 +159,34 @@ public class OrderService {
 
         String loggedUser = currentUserService.getLoggedInUser();
 
+        log.debug("Checkout started for user: {}", loggedUser);
+
         Users user = userRepo.findByUserName(loggedUser);
 
         Cart cart = user.getCart();
 
         if (cart == null || cart.getCartItemsList().isEmpty()) {
+
+            log.warn("Cart is empty for user: {}", loggedUser);
+
             throw new CartEmptyException("No products available in cart");
         }
 
         PlaceOrderRequest prepareOrderReq = new PlaceOrderRequest();
         prepareOrderReq.setItems(prepareOrderFromCart(cart.getCartItemsList()));
         placeOrder(prepareOrderReq);
+
+        log.info("Checkout completed successfully for user: {}", loggedUser);
     }
 
     private ApplyCouponResponse checkCouponsAndRedeem(String coupon, double totalPricePerOrder) {
+        log.debug("Validating coupon: {}", coupon);
+
 
         if (!discountService.validateCoupon(coupon)) {
-            logger.info("Coupon Code Is Not Available");
+
+            log.info("Coupon Code Is Not Available");
+
             ApplyCouponResponse couponResponse = new ApplyCouponResponse();
             couponResponse.setApplied(false);
             couponResponse.setMessage("No Coupon is applied");
@@ -173,7 +197,10 @@ public class OrderService {
         ApplyCouponResponse applyCouponResponse = discountService.applyDiscountByUsers(coupon, totalPricePerOrder);
 
         if (!applyCouponResponse.isApplied()) {
-            logger.info(applyCouponResponse.getMessage());
+
+            log.warn("Coupon application failed: {}", applyCouponResponse.getMessage());
+
+            log.info(applyCouponResponse.getMessage());
         }
 
         return applyCouponResponse;
@@ -198,15 +225,26 @@ public class OrderService {
 
         String loggedUser = currentUserService.getLoggedInUser();
 
+        log.debug("Fetching order details. User: {}, OrderNumber: {}", loggedUser, orderNumber);
+
         Orders orders = orderServiceRepository.findByOrderNumber(orderNumber);
 
         if (orders == null) {
+
+            log.warn("Order not found. OrderNumber: {}", orderNumber);
+
             throw new OrderNotFoundException("No Orders present with this OrderNumber : " + orderNumber);
         }
 
         if (!orders.getUsers().getUserName().equals(loggedUser)) {
+
+            log.warn("Unauthorized order access attempt. User: {}, OrderNumber: {}", loggedUser, orderNumber);
+
             throw new OrderNotFoundException("No Order Found");
         }
+
+        log.info("Order fetched successfully. OrderNumber: {}", orderNumber);
+
         return buildOrderResDto(orders);
     }
 
@@ -214,11 +252,18 @@ public class OrderService {
 
         String loggedUser = currentUserService.getLoggedInUser();
 
+        log.debug("Fetching all orders for user: {}", loggedUser);
+
         List<Orders> orders = orderServiceRepository.findByUsers_UserName(loggedUser);
 
         if (orders.isEmpty()) {
+
+            log.warn("No orders found for user: {}", loggedUser);
+
             throw new OrderNotFoundException("No orders found.");
         }
+
+        log.info("Total orders fetched for user {} : {}", loggedUser, orders.size());
 
         return orders.stream()
                 .map(this::buildOrderResDto)
@@ -258,11 +303,18 @@ public class OrderService {
 
     public List<AdminOrdersResDto> getAllOrders() {
 
+        log.debug("Fetching all orders for admin");
+
         List<Orders> ordersList = orderServiceRepository.findAll();
 
         if (ordersList.isEmpty()) {
+
+            log.warn("No orders found in database");
+
             throw new OrderNotFoundException("No orders found.");
         }
+
+        log.info("Total orders fetched: {}", ordersList.size());
 
         return ordersList.stream()
                 .map(this::buildOrderResDtoForAdmin)
@@ -271,12 +323,17 @@ public class OrderService {
 
     @Transactional
     private void updateOrderStatus(String orderNumber, OrderStatus newOrderStatus) {
+
+        log.debug("Updating order status. OrderNumber: {}, NewStatus: {}", orderNumber, newOrderStatus);
+
         Orders orders = getOrder(orderNumber);
 
         validateOrderStatusUpdate(orders.getOrderStatus(), newOrderStatus);
 
         orders.setOrderStatus(newOrderStatus);
         orderServiceRepository.save(orders);
+
+        log.info("Order status updated successfully. OrderNumber: {}, Status: {}", orderNumber, newOrderStatus);
     }
 
     public String markOrderAsPending(String orderNumber) {
@@ -314,9 +371,14 @@ public class OrderService {
 
         String loggedUser = currentUserService.getLoggedInUser();
 
+        log.debug("Cancel order request initiated. User: {}, OrderNumber: {}", loggedUser, orderNumber);
+
         Orders orders = getOrder(orderNumber);
 
         if (!orders.getUsers().getUserName().equals(loggedUser)) {
+
+            log.warn("Unauthorized order cancellation attempt. User: {}, OrderNumber: {}", loggedUser, orderNumber);
+
             throw new UserAccessDeniedException("Access Denied");
         }
 
@@ -325,18 +387,33 @@ public class OrderService {
         //Rever the Inventory Count
         revertInventory(orders);
 
+        //Revert the Coupons if any used:
+
+        revertCoupon(orders.getAppliedCoupon());
+
+        log.info("Inventory reverted successfully for cancelled order: {}", orderNumber);
+
         //Updating the Order Status
         orders.setOrderStatus(OrderStatus.CANCELLED);
 
         orderServiceRepository.save(orders);
 
+        log.info("Order cancelled successfully. OrderNumber: {}", orderNumber);
+
         return "Order Cancelled Successfully";
+    }
+
+    private void revertCoupon(String coupon){
+        discountService.revertCoupon(coupon);
     }
 
     private void revertInventory(Orders orders) {
         List<OrderItems> orderItemsList = orders.getOrderItemsList();
 
         if (orderItemsList.isEmpty()) {
+
+            log.warn("No order items found while reverting inventory");
+
             throw new OrderItemsNotFoundException("No Order Items Found");
         }
 
@@ -344,11 +421,16 @@ public class OrderService {
             Products products = orderItems.getProduct();
 
             if (products == null) {
+
+                log.warn("Product not found while reverting inventory");
+
                 throw new NoProductFound("No Product Found");
             }
 
             Inventory inventory = products.getInventory();
             inventory.setProductQuantity(inventory.getProductQuantity() + orderItems.getQuantity());
+
+            log.info("Inventory reverted for productId: {}, RestoredQuantity: {}", products.getProductId(), orderItems.getQuantity());
         }
     }
 
@@ -356,6 +438,9 @@ public class OrderService {
         Orders orders = orderServiceRepository.findByOrderNumber(orderNumber);
 
         if (orders == null) {
+
+            log.warn("Order not found. OrderNumber: {}", orderNumber);
+
             throw new OrderNotFoundException("No Order Found");
         }
 
@@ -367,21 +452,19 @@ public class OrderService {
 
         // Prevent same status update
         if (prevOrderStatus == newOrderStatus) {
-            throw new OrderStatusUpdateException(
-                    "Order is already in " + newOrderStatus + " status"
-            );
+
+            log.warn("Duplicate order status update attempted. Status: {}", newOrderStatus);
+
+            throw new OrderStatusUpdateException("Order is already in " + newOrderStatus + " status");
         }
 
         Set<OrderStatus> allowedStatuses = VALID_STATUS_TRANSITIONS.get(prevOrderStatus);
 
         if (!allowedStatuses.contains(newOrderStatus)) {
 
-            throw new OrderStatusUpdateException(
-                    "Invalid status transition from "
-                            + prevOrderStatus +
-                            " to " +
-                            newOrderStatus
-            );
+            log.warn("Invalid order status transition attempted. From: {}, To: {}", prevOrderStatus, newOrderStatus);
+
+            throw new OrderStatusUpdateException("Invalid status transition from " + prevOrderStatus + " to " + newOrderStatus);
         }
     }
 
@@ -444,6 +527,8 @@ public class OrderService {
                     )
             );
 
+            log.info("Inventory updated for productId: {}, OrderedQuantity: {}, RemainingStock: {}", products.getProductId(), orderQuantity, inventory.getProductQuantity());
+
             entityManager.flush();
         }
 
@@ -471,6 +556,8 @@ public class OrderService {
                     deliveryCharge
             );
 
+            log.info("Order item added. ProductId: {}, Quantity: {}", product.getProductId(), dto.getQuantity());
+
             orderItemsList.add(item);
         }
 
@@ -478,7 +565,11 @@ public class OrderService {
     }
 
     private void validateIfProductIsAvailableForOrder(int stockQuantity, int buyQuantity) throws ProductOutOfStockException{
+
         if (stockQuantity <= 0 || buyQuantity > stockQuantity) {
+
+            log.warn("Product out of stock. AvailableStock: {}, RequestedQuantity: {}", stockQuantity, buyQuantity);
+
             throw new ProductOutOfStockException("Product is out of stock");
         }
     }

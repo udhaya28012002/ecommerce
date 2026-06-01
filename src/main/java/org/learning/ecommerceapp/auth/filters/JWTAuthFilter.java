@@ -7,6 +7,8 @@ import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import org.learning.ecommerceapp.auth.util.JWTUtil;
 import org.learning.ecommerceapp.user.service.UserService;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.security.core.userdetails.UserDetails;
@@ -18,6 +20,8 @@ import java.io.IOException;
 
 @Component
 public class JWTAuthFilter extends OncePerRequestFilter {
+
+    private static final Logger log = LoggerFactory.getLogger(JWTAuthFilter.class);
 
     private final JWTUtil jwtUtil;
     private final UserService userService;
@@ -42,7 +46,12 @@ public class JWTAuthFilter extends OncePerRequestFilter {
 
         String authorizationHeader = request.getHeader("Authorization");
 
+        log.debug("JWT filter invoked for path: {}", request.getServletPath());
+
         if (request.getServletPath().equals("/api/refreshAuth")) {
+
+            log.info("Skipping JWT validation for refresh token endpoint");
+
             filterChain.doFilter(request, response);
             return;
         }
@@ -52,34 +61,56 @@ public class JWTAuthFilter extends OncePerRequestFilter {
 
         try {
 
-        if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
-            token = authorizationHeader.substring(7);
-            username = jwtUtil.extractUsernameFromToken(token);
-        }
+            if (authorizationHeader != null && authorizationHeader.startsWith("Bearer ")) {
 
-        if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
-            UserDetails userDetails = userService.loadUserByUsername(username);
+                log.debug("Authorization header found");
 
-            if (jwtUtil.validateToken(username, userDetails, token)) {
-                UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
-                authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
-                SecurityContextHolder.getContext().setAuthentication(authToken);
+                token = authorizationHeader.substring(7);
+                username = jwtUtil.extractUsernameFromToken(token);
+
+                log.debug("Username extracted from token: {}", username);
+
             }
-        }
 
-        filterChain.doFilter(request, response);
+            if (username != null && SecurityContextHolder.getContext().getAuthentication() == null) {
+
+                log.debug("Loading user details for username: {}", username);
+
+                UserDetails userDetails = userService.loadUserByUsername(username);
+
+                if (jwtUtil.validateToken(username, userDetails, token)) {
+
+                    log.debug("JWT token validated successfully for user: {}", username);
+
+                    UsernamePasswordAuthenticationToken authToken = new UsernamePasswordAuthenticationToken(userDetails, null, userDetails.getAuthorities());
+                    authToken.setDetails(new WebAuthenticationDetailsSource().buildDetails(request));
+                    SecurityContextHolder.getContext().setAuthentication(authToken);
+
+                    log.debug("Security context updated for user: {}", username);
+                } else {
+
+                    log.warn("JWT token validation failed for user: {}", username);
+                }
+            }
+
+            filterChain.doFilter(request, response);
 
         } catch (ExpiredJwtException ex) {
+
+            log.warn("JWT token expired: {}", ex.getMessage());
 
             response.setStatus(HttpServletResponse.SC_UNAUTHORIZED);
 
             response.setContentType("application/json");
 
             response.getWriter().write("""
-                {
-                    "message": "Access token expired"
-                }
-            """);
+                        {
+                            "message": "Access token expired"
+                        }
+                    """);
+        } catch (Exception ex){
+            log.error("Unexpected error occurred in JWT filter", ex);
+            throw ex;
         }
     }
 

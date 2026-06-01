@@ -135,6 +135,74 @@
     });
   }
 
+  async function loadAvailableCoupons() {
+    try {
+      const resp = await request('GET', '/api/coupon/displayCoupons');
+
+      console.log('Available coupons:', resp);
+
+      const availableCoupons = resp.availableCoupons || {};
+      const couponsList = document.getElementById('coupons-list');
+      couponsList.innerHTML = '';
+
+      const coupons = Object.entries(availableCoupons);
+      if (coupons.length === 0) {
+        couponsList.innerHTML = '<p style="margin:0;color:#666;">No available coupons</p>';
+        return;
+      }
+
+      coupons.forEach(([code, details]) => {
+        // Only show active coupons
+        if (!details.isActive) return;
+
+        const couponDiv = document.createElement('div');
+        couponDiv.style.cssText = 'border:1px solid #ddd;padding:10px;border-radius:4px;background:#fff;';
+        
+        const discountDisplay = details.discountType === 'PERCENTAGE' 
+          ? `${details.discountValue}%` 
+          : `$${details.discountValue}`;
+
+        couponDiv.innerHTML = `
+          <div style="display:flex;justify-content:space-between;align-items:start;gap:8px;">
+            <div style="flex:1;">
+              <strong>${escapeHtml(code)}</strong>
+              <div style="font-size:12px;color:#666;margin-top:4px;">
+                <div>Type: ${escapeHtml(details.discountType || 'FLAT')}</div>
+                <div>Discount: ${escapeHtml(discountDisplay)}</div>
+                <div>Min Order: $${escapeHtml(details.minimumOrderAmount || 0)}</div>
+                <div>Max Discount: $${escapeHtml(details.maximumDiscountAmount || 0)}</div>
+              </div>
+            </div>
+            <button class="btn apply-coupon-btn" data-code="${escapeHtml(code)}" style="white-space:nowrap;padding:6px 12px;font-size:12px;">Apply</button>
+          </div>
+        `;
+        couponsList.appendChild(couponDiv);
+      });
+    } catch (err) {
+      const couponsList = document.getElementById('coupons-list');
+      couponsList.innerHTML = `<p style="margin:0;color:#c33;">${escapeHtml(err.message || 'Failed to load coupons')}</p>`;
+    }
+  }
+
+  function closeCouponsModal() {
+    document.getElementById('coupons-modal').style.display = 'none';
+  }
+
+  document.getElementById('view-coupons-btn').addEventListener('click', async () => {
+    await loadAvailableCoupons();
+    document.getElementById('coupons-modal').style.display = 'block';
+  });
+
+  document.getElementById('close-coupons-modal').addEventListener('click', closeCouponsModal);
+
+  document.addEventListener('click', (e) => {
+    if (e.target.classList.contains('apply-coupon-btn')) {
+      const code = e.target.getAttribute('data-code');
+      document.getElementById('coupon-code').value = code;
+      closeCouponsModal();
+    }
+  });
+
   document.getElementById('clear-all').addEventListener('click', async () => {
     try {
       await request('DELETE', '/api/cart/deleteAll');
@@ -160,11 +228,29 @@
       const body = { couponCode: couponCode || null, items };
 
       const orderResp = await request('POST', '/api/orders/placeOrder', body);
-      // Expect OrdersResDto with orderNumber
+
+      console.log('Order response:', JSON.stringify(orderResp));
+
+      // Expect OrdersResDto with orderNumber, finalPrice, appliedCoupon
       const orderNumber = (orderResp && (orderResp.orderNumber || orderResp.orderId || orderResp.id)) || null;
       if (orderNumber) {
         showOrder('Order placed: ' + orderNumber, true);
-        // Clear cart view
+        
+        // Update Summary section with order details
+        if (orderResp) {
+          const summary_total = document.getElementById('summary-total');
+          const summary_discount = document.getElementById('summary-discount');
+          const summary_delivery = document.getElementById('summary-delivery');
+          const summary_final = document.getElementById('summary-final');
+          
+          // Display order details in summary
+          summary_total.textContent = '-';
+          summary_discount.textContent = orderResp.appliedCoupon ? `Applied: ${escapeHtml(orderResp.appliedCoupon)}` : '-';
+          summary_delivery.textContent = '-';
+          summary_final.textContent = orderResp.finalPrice ?? '-';
+        }
+        
+        // Clear cart view after showing order details
         await loadCart();
       } else {
         showOrder('Order placed', true);
@@ -194,8 +280,6 @@
   }
 
   // initial load
-  document.addEventListener('DOMContentLoaded', () => {
-    loadCart();
-  });
+  loadCart();
 
 })();

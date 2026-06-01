@@ -48,6 +48,8 @@ public class CartCacheService {
     @CacheEvict(value = "cart", key = "#loggedUser")
     public void addToCart(long productId, int quantity, String loggedUser) {
 
+        logger.debug("Add to cart request received. User: {}, ProductId: {}, Quantity: {}", loggedUser, productId, quantity);
+
         Products product = productService.getProductByIdInternal(productId);
 
         Users user = userService.findByUsername_ForInternal(loggedUser);
@@ -55,6 +57,9 @@ public class CartCacheService {
         Cart cart = cartRepository.findByUsers(user);
 
         if (cart == null) {
+
+            logger.debug("Cart not found for user: {}. Creating new cart.", loggedUser);
+
             cart = new Cart();
             cart.setUser(user);
             cart = cartRepository.save(cart);
@@ -71,7 +76,11 @@ public class CartCacheService {
         if (existingCartItems != null) {
 
             int availableQuantity = existingCartItems.getProducts().getInventory().getProductQuantity();
+
             if ((existingCartItems.getQuantity() + quantity) > availableQuantity) {
+
+                logger.warn("Insufficient stock while adding to cart. User: {}, ProductId: {}", loggedUser, productId);
+
                 throw new InvalidInventoryException("Insufficient stock for the requested quantity");
             }
         }
@@ -79,6 +88,8 @@ public class CartCacheService {
         validateStockAvailability(product.getInventory().getProductQuantity(), quantity);
 
         if (existingCartItems == null) {
+
+            logger.debug("Adding new product to cart. User: {}, ProductId: {}", loggedUser, productId);
 
             CartItems newCartItems = new CartItems();
 
@@ -90,38 +101,60 @@ public class CartCacheService {
 
         } else {
 
+            logger.debug("Updating existing cart item quantity. User: {}, ProductId: {}", loggedUser, productId);
+
             existingCartItems.setQuantity(existingCartItems.getQuantity() + quantity);
 
             cartItemRepository.save(existingCartItems);
         }
+
+        logger.info("Product added to cart successfully. User: {}, ProductId: {}", loggedUser, productId);
+
     }
 
     @Transactional
     @CacheEvict(value = "cart", key = "#loggedUser")
     public boolean removeFromCart(long productId, String loggedUser) {
 
+        logger.debug("Remove from cart request received. User: {}, ProductId: {}", loggedUser, productId);
+
         Users user = userService.findByUsername_ForInternal(loggedUser);
 
         Cart cart = cartRepository.findByUsers(user);
 
         if (cart == null || cart.getCartItemsList().isEmpty()) {
+
+            logger.warn("Cart is empty for user: {}", loggedUser);
+
             throw new CartEmptyException("No products available in cart");
         }
 
         cart.getCartItemsList().removeIf(cartItems -> cartItems.getProducts().getProductId() == productId);
 
         if (!cartItemRepository.existsByCartAndProducts_ProductId(cart, productId)) {
+
+            logger.warn("Product not found in cart. User: {}, ProductId: {}", loggedUser, productId);
+
             throw new CartEmptyException("No Product Found to Remove from Cart");
         }
 
-        return cartItemRepository.deleteByCartAndProducts_ProductId(cart, productId).getCartItemsId() == 0;
+        boolean removed = cartItemRepository.deleteByCartAndProducts_ProductId(cart, productId).getCartItemsId() == 0;
+
+        logger.info("Product removed from cart successfully. User: {}, ProductId: {}", loggedUser, productId);
+
+        return removed;
     }
 
     @Transactional
     @CacheEvict(value = "cart", key = "#loggedUser")
     public void updateCartQuantity(long productId, int quantity, boolean positive, String loggedUser) {
 
+        logger.debug("Update cart quantity request received. User: {}, ProductId: {}, Quantity: {}, Positive: {}", loggedUser, productId, quantity, positive);
+
         if (quantity <= 0) {
+
+            logger.warn("Invalid quantity provided. Quantity: {}", quantity);
+
             throw new IllegalArgumentException("Quantity must be greater than 0");
         }
 
@@ -130,6 +163,9 @@ public class CartCacheService {
         Cart cart = cartRepository.findByUsers(user);
 
         if (cart == null || cart.getCartItemsList().isEmpty()) {
+
+            logger.warn("Cart is empty for user: {}", loggedUser);
+
             throw new CartEmptyException("No products available in cart");
         }
 
@@ -137,7 +173,10 @@ public class CartCacheService {
                 .stream()
                 .filter(item -> item.getProducts().getProductId() == productId)
                 .findFirst()
-                .orElseThrow(() -> new NoProductFound("Product not found in cart"));
+                .orElseThrow(() -> {
+                    logger.warn("Product not found in cart. User: {}, ProductId: {}", loggedUser, productId);
+                    return new NoProductFound("Product not found in cart");
+                });
 
         int currentQuantity = cartItem.getQuantity();
 
@@ -146,17 +185,29 @@ public class CartCacheService {
         int availableQuantity = cartItem.getProducts().getInventory().getProductQuantity();
 
         if (updatedQuantity > availableQuantity) {
+
+            logger.warn("Insufficient stock while updating cart. User: {}, ProductId: {}", loggedUser, productId);
+
             throw new InvalidInventoryException("Insufficient stock for the requested quantity");
         }
 
         if (updatedQuantity < 0) {
+
+            logger.warn("Invalid updated quantity for ProductId: {}", productId);
+
             throw new InvalidInventoryException("Invalid quantity");
         }
 
         if (updatedQuantity == 0) {
+
+            logger.debug("Quantity became zero. Removing product from cart. ProductId: {}", productId);
+
             cartItemRepository.delete(cartItem);
             cart.getCartItemsList().remove(cartItem);
         } else {
+
+            logger.info("Cart quantity updated successfully. ProductId: {}, UpdatedQuantity: {}", productId, updatedQuantity);
+
             cartItem.setQuantity(updatedQuantity);
         }
     }
@@ -165,6 +216,8 @@ public class CartCacheService {
     @CacheEvict(value = "cart", key = "#loggedUser")
     public void clearCart(String loggedUser) {
 
+        logger.debug("Clear cart request received for user: {}", loggedUser);
+
         Users user = userService.findByUsername_ForInternal(loggedUser);
 
         Cart cart = cartRepository.findByUsers(user);
@@ -172,18 +225,27 @@ public class CartCacheService {
         cart.getCartItemsList().clear();
 
         cartItemRepository.deleteByCart(cart);
+
+        logger.info("Cart cleared successfully for user: {}", loggedUser);
     }
 
     @Cacheable(value = "cart", key = "#loggedUser")
     public CartResponseDto getUserCart(String loggedUser) {
+
+        logger.debug("Fetching cart details for user: {}", loggedUser);
 
         Users user = userService.findByUsername_ForInternal(loggedUser);
 
         Cart cart = cartRepository.findByUsers(user);
 
         if (cart == null || cart.getCartItemsList().isEmpty()) {
+
+            logger.warn("Cart is empty for user: {}", loggedUser);
+
             throw new CartEmptyException("No products available in cart");
         }
+
+        logger.info("Cart details fetched successfully for user: {}", loggedUser);
 
         return buildResponseDto(cart.getCartItemsList());
     }
@@ -191,6 +253,9 @@ public class CartCacheService {
     private void validateStockAvailability(int stockQuantity, int requestedQuantity) {
 
         if (stockQuantity <= 0 || requestedQuantity > stockQuantity) {
+
+            logger.warn("Product out of stock. Available: {}, Requested: {}", stockQuantity, requestedQuantity);
+
             throw new ProductOutOfStockException("Product is out of stock");
         }
     }
@@ -238,7 +303,7 @@ public class CartCacheService {
 
         cartResponseDto.setCartItemsCategoryResponseDtoList(cartCategoryResponseDtoList);
         cartResponseDto.setTotalPrice(computeTotalPrice);
-        cartResponseDto.setDiscount(10);
+        cartResponseDto.setDiscount(0);
         cartResponseDto.setDeliveryCharge(100);
         cartResponseDto.setFinalPrice(computeFinalPrice);
 

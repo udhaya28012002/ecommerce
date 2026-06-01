@@ -1,7 +1,12 @@
 package org.learning.ecommerceapp.auth.dto;
 
+import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotNull;
+
 public class RefreshTokenInput {
 
+    @NotNull(message = "Refresh Token is required")
+    @NotBlank(message = "Refresh Token is required")
     private String refreshToken;
 
     public String getRefreshToken() {

@@ -25,7 +25,7 @@ public class RefreshToken {
     private boolean revoked = false;
 
     @Column(nullable = false, updatable = false)
-    private LocalDate createdAt = LocalDate.now();
+    private final LocalDate createdAt = LocalDate.now();
 
     private Instant lastUsedAt;
 

@@ -80,10 +80,11 @@ async function protectedAction(asyncFunc) {
 }
 
 // Auto-run guard on page load if this script is included
-document.addEventListener('DOMContentLoaded', function() {
+/* document.addEventListener('DOMContentLoaded', function() {
   // Check if there's a data attribute specifying required role
   const pageRequiredRole = document.documentElement.getAttribute('data-required-role');
   if (pageRequiredRole) {
     guard(pageRequiredRole);
   }
 });
+ */

@@ -26,8 +26,6 @@ public class JWTUtil {
 
     public String generateJWTToken(String username, String role) {
 
-        System.out.println("JWT Role : " + role);
-
         return Jwts.builder()
                 .subject(username)
                 .claim("role", role)

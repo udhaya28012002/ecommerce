@@ -10,7 +10,7 @@ async function login(username, password) {
     const response = await fetch(API_BASE + '/api/authenticate', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ username, password })
+      body: JSON.stringify({ username, password, loginMethod: 'STANDARD' })
     });
 
     const data = await response.json();

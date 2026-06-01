@@ -128,6 +128,7 @@
     }
   });
 
-  document.addEventListener('DOMContentLoaded', loadProfile);
+  // initial load
+  loadProfile();
 
 })();
